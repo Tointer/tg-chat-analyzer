@@ -153,7 +153,7 @@ export function aggregateMessagesByTimeBucket(
 ): MessageBucketAggregate[] {
 	const normalizedBucket = normalizeTimeBucket(bucket);
 	const normalizedTimeRange = normalizeTimeRange(timeRange, index.stats.dateRange);
-	const cachedAggregates = getBucketAggregateCache(index, normalizedBucket, normalizedTimeRange);
+	const cachedAggregates = getBucketAggregateCache(index, normalizedBucket, metric, normalizedTimeRange);
 
 	if (cachedAggregates) {
 		return cachedAggregates;
@@ -166,7 +166,7 @@ export function aggregateMessagesByTimeBucket(
 		metric
 	);
 
-	setBucketAggregateCache(index, normalizedBucket, normalizedTimeRange, aggregates);
+	setBucketAggregateCache(index, normalizedBucket, metric, normalizedTimeRange, aggregates);
 
 	return aggregates;
 }
@@ -183,9 +183,8 @@ export function aggregateNormalizedMessagesByTimeBucket(
 		string,
 		{
 			start: Date;
-			otherCount: number;
-			lowInfoCount: number;
-			mediaOnlyCount: number;
+			replyCount: number;
+			nonReplyCount: number;
 		}
 	>();
 	let firstBucketStart: Date | null = null;
@@ -209,18 +208,15 @@ export function aggregateNormalizedMessagesByTimeBucket(
 
 		const bucketCounts = counts.get(key) ?? {
 			start: bucketStart,
-			otherCount: 0,
-			lowInfoCount: 0,
-			mediaOnlyCount: 0
+			replyCount: 0,
+			nonReplyCount: 0
 		};
 		const increment = metric === 'characters' ? message.textLength : 1;
 
-		if (message.classification === 'media-only') {
-			bucketCounts.mediaOnlyCount += increment;
-		} else if (message.classification === 'low-info') {
-			bucketCounts.lowInfoCount += increment;
+		if (message.replyToMessageId !== null) {
+			bucketCounts.replyCount += increment;
 		} else {
-			bucketCounts.otherCount += increment;
+			bucketCounts.nonReplyCount += increment;
 		}
 
 		counts.set(key, bucketCounts);
@@ -248,9 +244,8 @@ export function aggregateNormalizedMessagesByTimeBucket(
 	) {
 		const bucketCounts = counts.get(bucketStart.toISOString()) ?? {
 			start: bucketStart,
-			otherCount: 0,
-			lowInfoCount: 0,
-			mediaOnlyCount: 0
+			replyCount: 0,
+			nonReplyCount: 0
 		};
 		const range = getTimeBucketDateRange(bucketStart, normalizedBucket);
 
@@ -259,9 +254,8 @@ export function aggregateNormalizedMessagesByTimeBucket(
 			tooltipLabel: getTimeBucketTooltipLabel(bucketStart, normalizedBucket),
 			start: range.start,
 			end: range.end,
-			otherCount: bucketCounts.otherCount,
-			lowInfoCount: bucketCounts.lowInfoCount,
-			mediaOnlyCount: bucketCounts.mediaOnlyCount
+			replyCount: bucketCounts.replyCount,
+			nonReplyCount: bucketCounts.nonReplyCount
 		});
 	}
 

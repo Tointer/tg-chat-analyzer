@@ -8,12 +8,10 @@ export type AppTheme = {
 	label: string;
 	className: `theme-${AppThemeName}`;
 	chart: {
-		mediaBar: string;
-		mediaBarHover: string;
-		lowInfoBar: string;
-		lowInfoBarHover: string;
-		otherBar: string;
-		otherBarHover: string;
+		replyBar: string;
+		replyBarHover: string;
+		nonReplyBar: string;
+		nonReplyBarHover: string;
 		legendText: string;
 		axisText: string;
 		grid: string;
@@ -23,11 +21,6 @@ export type AppTheme = {
 		tooltipBody: string;
 		tooltipFooter: string;
 	};
-	miniArea: {
-		line: string;
-		fill: string;
-		overlay: string;
-	};
 };
 
 export const appThemes = {
@@ -36,12 +29,10 @@ export const appThemes = {
 		label: 'Midnight',
 		className: 'theme-midnight',
 		chart: {
-			mediaBar: '#84cc16',
-			mediaBarHover: '#a3e635',
-			lowInfoBar: '#c084fc',
-			lowInfoBarHover: '#d8b4fe',
-			otherBar: '#f97316',
-			otherBarHover: '#fb923c',
+			replyBar: '#9a6b3a',
+			replyBarHover: '#b08968',
+			nonReplyBar: '#f97316',
+			nonReplyBarHover: '#fb923c',
 			legendText: '#f6ede2',
 			axisText: '#cbb8a5',
 			grid: 'rgba(203, 184, 165, 0.12)',
@@ -50,11 +41,6 @@ export const appThemes = {
 			tooltipTitle: '#fff7ed',
 			tooltipBody: '#f6ede2',
 			tooltipFooter: '#bef264'
-		},
-		miniArea: {
-			line: '#f97316',
-			fill: 'rgba(249, 115, 22, 0.18)',
-			overlay: '#84cc16'
 		}
 	},
 	dawn: {
@@ -62,12 +48,10 @@ export const appThemes = {
 		label: 'Dawn',
 		className: 'theme-dawn',
 		chart: {
-			mediaBar: '#f59e0b',
-			mediaBarHover: '#d97706',
-			lowInfoBar: '#a855f7',
-			lowInfoBarHover: '#c084fc',
-			otherBar: '#0f766e',
-			otherBarHover: '#115e59',
+			replyBar: '#2f6f43',
+			replyBarHover: '#3f8754',
+			nonReplyBar: '#9fd8a8',
+			nonReplyBarHover: '#88c993',
 			legendText: '#27272a',
 			axisText: '#3f3f46',
 			grid: 'rgba(15, 23, 42, 0.08)',
@@ -76,11 +60,6 @@ export const appThemes = {
 			tooltipTitle: '#18181b',
 			tooltipBody: '#3f3f46',
 			tooltipFooter: '#0f766e'
-		},
-		miniArea: {
-			line: '#0f766e',
-			fill: 'rgba(15, 118, 110, 0.14)',
-			overlay: '#f59e0b'
 		}
 	}
 } satisfies Record<AppThemeName, AppTheme>;

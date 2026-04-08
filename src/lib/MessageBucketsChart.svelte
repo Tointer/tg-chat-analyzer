@@ -30,9 +30,8 @@
 
 	function getStackValues(dataIndex: number) {
 		return [
-			messageBuckets.mediaOnlyValues[dataIndex] ?? 0,
-			messageBuckets.lowInfoValues[dataIndex] ?? 0,
-			messageBuckets.otherValues[dataIndex] ?? 0
+			messageBuckets.replyValues[dataIndex] ?? 0,
+			messageBuckets.nonReplyValues[dataIndex] ?? 0
 		];
 	}
 
@@ -55,31 +54,21 @@
 			labels: messageBuckets.labels,
 			datasets: [
 				{
-					label: 'Media only',
-					data: messageBuckets.mediaOnlyValues,
-					backgroundColor: theme.chart.mediaBar,
-					hoverBackgroundColor: theme.chart.mediaBarHover,
+					label: 'Replies',
+					data: messageBuckets.replyValues,
+					backgroundColor: theme.chart.replyBar,
+					hoverBackgroundColor: theme.chart.replyBarHover,
 					borderRadius: getDatasetBorderRadius(0),
 					borderSkipped: false,
 					stack: 'messages',
 					maxBarThickness: 28
 				},
 				{
-					label: 'Low info',
-					data: messageBuckets.lowInfoValues,
-					backgroundColor: theme.chart.lowInfoBar,
-					hoverBackgroundColor: theme.chart.lowInfoBarHover,
+					label: 'Non-replies',
+					data: messageBuckets.nonReplyValues,
+					backgroundColor: theme.chart.nonReplyBar,
+					hoverBackgroundColor: theme.chart.nonReplyBarHover,
 					borderRadius: getDatasetBorderRadius(1),
-					borderSkipped: false,
-					stack: 'messages',
-					maxBarThickness: 28
-				},
-				{
-					label: 'Other messages',
-					data: messageBuckets.otherValues,
-					backgroundColor: theme.chart.otherBar,
-					hoverBackgroundColor: theme.chart.otherBarHover,
-					borderRadius: getDatasetBorderRadius(2),
 					borderSkipped: false,
 					stack: 'messages',
 					maxBarThickness: 28

@@ -73,9 +73,8 @@ export function getTelegramUserMetricBuckets(
 		trimmedEdgeBucketCount: 0,
 		labels: aggregatedBuckets.map((entry) => entry.label),
 		tooltipLabels: aggregatedBuckets.map((entry) => entry.tooltipLabel),
-		otherValues: aggregatedBuckets.map((entry) => entry.otherCount),
-		lowInfoValues: aggregatedBuckets.map((entry) => entry.lowInfoCount),
-		mediaOnlyValues: aggregatedBuckets.map((entry) => entry.mediaOnlyCount)
+		replyValues: aggregatedBuckets.map((entry) => entry.replyCount),
+		nonReplyValues: aggregatedBuckets.map((entry) => entry.nonReplyCount)
 	};
 
 	cacheForIndex.set(cacheKey, chart);

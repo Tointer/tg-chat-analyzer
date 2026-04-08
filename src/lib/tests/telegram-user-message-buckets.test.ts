@@ -32,6 +32,7 @@ describe('getTelegramUserMessageBuckets', () => {
 					members: ['Admin']
 				},
 				createMessage({
+					id: 1,
 					from: 'Alice',
 					from_id: 'user1',
 					date: '2025-12-14T09:00:00',
@@ -39,8 +40,10 @@ describe('getTelegramUserMessageBuckets', () => {
 					text: 'first'
 				}),
 				createMessage({
+					id: 2,
 					from: 'Alice',
 					from_id: 'user1',
+					reply_to_message_id: 1,
 					date: '2025-12-16T09:00:00',
 					date_unixtime: '1765875600',
 					photo: 'photo.jpg'
@@ -69,9 +72,8 @@ describe('getTelegramUserMessageBuckets', () => {
 			'2025-12-16',
 			'2025-12-17'
 		]);
-		assert.deepEqual(buckets.otherValues, [0, 1, 0, 0, 0]);
-		assert.deepEqual(buckets.lowInfoValues, [0, 0, 0, 0, 0]);
-		assert.deepEqual(buckets.mediaOnlyValues, [0, 0, 0, 1, 0]);
+		assert.deepEqual(buckets.nonReplyValues, [0, 1, 0, 0, 0]);
+		assert.deepEqual(buckets.replyValues, [0, 0, 0, 1, 0]);
 	});
 
 	test('supports character-weighted buckets for the same user range', () => {
@@ -79,6 +81,7 @@ describe('getTelegramUserMessageBuckets', () => {
 			name: 'User character range chat',
 			messages: [
 				createMessage({
+					id: 1,
 					from: 'Alice',
 					from_id: 'user1',
 					date: '2025-12-14T09:00:00',
@@ -86,12 +89,22 @@ describe('getTelegramUserMessageBuckets', () => {
 					text: 'hello'
 				}),
 				createMessage({
+					id: 2,
 					from: 'Alice',
 					from_id: 'user1',
+					reply_to_message_id: 1,
 					date: '2025-12-16T09:00:00',
 					date_unixtime: '1765875600',
+					text: 'ok'
+				}),
+				createMessage({
+					id: 3,
+					from: 'Alice',
+					from_id: 'user1',
 					forwarded_from: 'Channel',
 					forwarded_from_id: 'channel1',
+					date: '2025-12-17T09:00:00',
+					date_unixtime: '1765962000',
 					text: 'ok'
 				})
 			]
@@ -116,8 +129,7 @@ describe('getTelegramUserMessageBuckets', () => {
 			'2025-12-16',
 			'2025-12-17'
 		]);
-		assert.deepEqual(buckets.otherValues, [0, 5, 0, 0, 0]);
-		assert.deepEqual(buckets.lowInfoValues, [0, 0, 0, 0, 0]);
-		assert.deepEqual(buckets.mediaOnlyValues, [0, 0, 0, 0, 0]);
+		assert.deepEqual(buckets.nonReplyValues, [0, 5, 0, 0, 0]);
+		assert.deepEqual(buckets.replyValues, [0, 0, 0, 2, 0]);
 	});
 });

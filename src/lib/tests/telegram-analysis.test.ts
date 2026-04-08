@@ -122,10 +122,11 @@ describe('analyzeTelegramExport', () => {
 			'Day 2025-12-16',
 			'Day 2025-12-17'
 		]);
-		assert.deepEqual(report.messageBuckets.otherValues, [1, 1, 0, 1, 1]);
-		assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 0, 1, 0, 0]);
-		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 0, 1, 0, 0]);
+		assert.deepEqual(report.messageBuckets.nonReplyValues, [1, 1, 2, 1, 1]);
+		assert.deepEqual(report.messageBuckets.replyValues, [0, 0, 0, 0, 0]);
 		assert.equal(report.totalMessages, 6);
+		assert.equal(report.replyMessages, 0);
+		assert.equal(report.nonReplyMessages, 6);
 		assert.equal(report.otherMessages, 4);
 		assert.equal(report.lowInfoMessages, 1);
 		assert.equal(report.mediaOnlyMessages, 1);
@@ -167,9 +168,8 @@ describe('analyzeTelegramExport', () => {
 			'3 days: 2025-12-17 to 2025-12-19',
 			'3 days: 2025-12-20 to 2025-12-22'
 		]);
-		assert.deepEqual(report.messageBuckets.otherValues, [1, 0, 0, 1]);
-		assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 2, 1, 1]);
-		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 1, 0, 0]);
+		assert.deepEqual(report.messageBuckets.nonReplyValues, [1, 3, 1, 2]);
+		assert.deepEqual(report.messageBuckets.replyValues, [0, 0, 0, 0]);
 		assert.deepEqual(report.range, { start: '2025-12-11', end: '2025-12-22' });
 	});
 
@@ -202,9 +202,8 @@ describe('analyzeTelegramExport', () => {
 			'Month 2026-02',
 			'Month 2026-03'
 		]);
-		assert.deepEqual(report.messageBuckets.otherValues, [1, 0, 0, 0, 1]);
-		assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 1, 1, 1, 0]);
-		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 1, 0, 0, 0]);
+		assert.deepEqual(report.messageBuckets.nonReplyValues, [1, 2, 1, 1, 1]);
+		assert.deepEqual(report.messageBuckets.replyValues, [0, 0, 0, 0, 0]);
 		assert.deepEqual(report.range, { start: '2025-11-01', end: '2026-03-31' });
 	});
 
@@ -238,9 +237,8 @@ describe('analyzeTelegramExport', () => {
 			'Week of 2025-12-22',
 			'Week of 2025-12-29'
 		]);
-			assert.deepEqual(report.messageBuckets.otherValues, [1, 0, 0, 0, 0, 1]);
-			assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 0, 1, 1, 1, 0]);
-			assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 0, 1, 0, 0, 0]);
+			assert.deepEqual(report.messageBuckets.nonReplyValues, [1, 0, 2, 1, 1, 1]);
+			assert.deepEqual(report.messageBuckets.replyValues, [0, 0, 0, 0, 0, 0]);
 		assert.deepEqual(report.range, { start: '2025-11-24', end: '2026-01-04' });
 	});
 
@@ -254,9 +252,8 @@ describe('analyzeTelegramExport', () => {
 			});
 
 			assert.deepEqual(report.messageBuckets.labels, ['2025-12-14', '2025-12-15', '2025-12-16']);
-			assert.deepEqual(report.messageBuckets.otherValues, [1, 0, 0]);
-			assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 0, 0]);
-			assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 0, 1]);
+			assert.deepEqual(report.messageBuckets.nonReplyValues, [1, 0, 1]);
+			assert.deepEqual(report.messageBuckets.replyValues, [0, 0, 0]);
 			assert.deepEqual(report.range, { start: '2025-12-14', end: '2025-12-16' });
 		});
 
@@ -285,43 +282,47 @@ describe('analyzeTelegramExport', () => {
 				'2025-12-16',
 				'2025-12-17'
 			]);
-			assert.deepEqual(report.messageBuckets.otherValues, [0, 1, 0, 0, 0]);
-			assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 0, 0, 0, 0]);
-			assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 0, 0, 1, 0]);
+			assert.deepEqual(report.messageBuckets.nonReplyValues, [0, 1, 0, 1, 0]);
+			assert.deepEqual(report.messageBuckets.replyValues, [0, 0, 0, 0, 0]);
 			assert.deepEqual(report.range, { start: '2025-12-13', end: '2025-12-17' });
 		});
 
-	test('separates low-info, media-only, and other messages in chart buckets', () => {
+	test('separates replies and non-replies in chart buckets', () => {
 		const report = analyzeTelegramExport({
 			name: 'Mixed chart chat',
 			messages: [
-				createMessage({ date: '2025-12-13T09:00:00', date_unixtime: '1765616400', text: 'edge start' }),
+				createMessage({ id: 1, date: '2025-12-13T09:00:00', date_unixtime: '1765616400', text: 'edge start' }),
 				createMessage({
+					id: 2,
 					date: '2025-12-14T09:00:00',
 					date_unixtime: '1765702800',
 					photo: 'photo.jpg'
 				}),
 				createMessage({
+					id: 3,
+					reply_to_message_id: 1,
 					date: '2025-12-14T10:00:00',
 					date_unixtime: '1765706400',
 					forwarded_from: 'Source',
 					forwarded_from_id: 'channel1',
 					text: 'forwarded'
 				}),
-				createMessage({ date: '2025-12-14T11:00:00', date_unixtime: '1765710000', text: 'ok' }),
+				createMessage({ id: 4, reply_to_message_id: 2, date: '2025-12-14T11:00:00', date_unixtime: '1765710000', text: 'ok' }),
 				createMessage({
+					id: 5,
 					date: '2025-12-14T12:00:00',
 					date_unixtime: '1765713600',
 					text: 'this one has real content'
 				}),
-				createMessage({ date: '2025-12-15T09:00:00', date_unixtime: '1765789200', text: 'edge end' })
+				createMessage({ id: 6, date: '2025-12-15T09:00:00', date_unixtime: '1765789200', text: 'edge end' })
 			]
 		});
 
 		assert.deepEqual(report.messageBuckets.labels, ['2025-12-13', '2025-12-14', '2025-12-15']);
-		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 1, 0]);
-		assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 1, 0]);
-		assert.deepEqual(report.messageBuckets.otherValues, [1, 2, 1]);
+		assert.deepEqual(report.messageBuckets.nonReplyValues, [1, 2, 1]);
+		assert.deepEqual(report.messageBuckets.replyValues, [0, 2, 0]);
+		assert.equal(report.replyMessages, 2);
+		assert.equal(report.nonReplyMessages, 4);
 		assert.equal(report.mediaOnlyMessages, 1);
 		assert.equal(report.lowInfoMessages, 1);
 		assert.equal(report.otherMessages, 4);

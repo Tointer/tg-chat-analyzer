@@ -44,9 +44,8 @@ export function analyzeTelegramAnalyticsIndex(
 	const visibleMessageBuckets = messageBuckets.labels.map((label, dataIndex) => ({
 		label,
 		tooltipLabel: messageBuckets.tooltipLabels[dataIndex] ?? label,
-		otherCount: messageBuckets.otherValues[dataIndex] ?? 0,
-		lowInfoCount: messageBuckets.lowInfoValues[dataIndex] ?? 0,
-		mediaOnlyCount: messageBuckets.mediaOnlyValues[dataIndex] ?? 0
+		replyCount: messageBuckets.replyValues[dataIndex] ?? 0,
+		nonReplyCount: messageBuckets.nonReplyValues[dataIndex] ?? 0
 	}));
 	const aggregatedMessageBuckets = aggregateMessagesByTimeBucket(
 		index,
@@ -54,27 +53,24 @@ export function analyzeTelegramAnalyticsIndex(
 		options.timeRange
 	);
 	const totalMessages = aggregatedMessageBuckets.reduce(
-		(sum, entry) => sum + entry.otherCount + entry.lowInfoCount + entry.mediaOnlyCount,
+		(sum, entry) => sum + entry.replyCount + entry.nonReplyCount,
 		0
 	);
-	const otherMessages = aggregatedMessageBuckets.reduce((sum, entry) => sum + entry.otherCount, 0);
-	const lowInfoMessages = aggregatedMessageBuckets.reduce((sum, entry) => sum + entry.lowInfoCount, 0);
-	const mediaOnlyMessages = aggregatedMessageBuckets.reduce(
-		(sum, entry) => sum + entry.mediaOnlyCount,
-		0
-	);
+	const replyMessages = aggregatedMessageBuckets.reduce((sum, entry) => sum + entry.replyCount, 0);
+	const nonReplyMessages = aggregatedMessageBuckets.reduce((sum, entry) => sum + entry.nonReplyCount, 0);
+	const otherMessages = index.stats.classificationCounts.other;
+	const lowInfoMessages = index.stats.classificationCounts['low-info'];
+	const mediaOnlyMessages = index.stats.classificationCounts['media-only'];
 	const busiestBucket = visibleMessageBuckets.reduce(
 		(current, entry) =>
-			entry.otherCount + entry.lowInfoCount + entry.mediaOnlyCount >
-			current.otherCount + current.lowInfoCount + current.mediaOnlyCount
+			entry.replyCount + entry.nonReplyCount > current.replyCount + current.nonReplyCount
 				? entry
 				: current,
 		visibleMessageBuckets[0] ?? {
 			label: 'N/A',
 			tooltipLabel: 'N/A',
-			otherCount: 0,
-			lowInfoCount: 0,
-			mediaOnlyCount: 0
+			replyCount: 0,
+			nonReplyCount: 0
 		}
 	);
 
@@ -83,6 +79,8 @@ export function analyzeTelegramAnalyticsIndex(
 		participantTimeline,
 		messageBuckets,
 		totalMessages,
+		replyMessages,
+		nonReplyMessages,
 		otherMessages,
 		lowInfoMessages,
 		mediaOnlyMessages,
@@ -90,7 +88,7 @@ export function analyzeTelegramAnalyticsIndex(
 		busiestBucket: {
 			label: busiestBucket.label,
 			tooltipLabel: busiestBucket.tooltipLabel,
-			count: busiestBucket.otherCount + busiestBucket.lowInfoCount + busiestBucket.mediaOnlyCount
+			count: busiestBucket.replyCount + busiestBucket.nonReplyCount
 		},
 		range: {
 			start: aggregatedMessageBuckets[0]?.start ?? 'N/A',
@@ -118,8 +116,7 @@ export function buildMessageBucketsChart(
 		trimmedEdgeBucketCount: 0,
 		labels: visibleMessageBuckets.map((entry) => entry.label),
 		tooltipLabels: visibleMessageBuckets.map((entry) => entry.tooltipLabel),
-		otherValues: visibleMessageBuckets.map((entry) => entry.otherCount),
-		lowInfoValues: visibleMessageBuckets.map((entry) => entry.lowInfoCount),
-		mediaOnlyValues: visibleMessageBuckets.map((entry) => entry.mediaOnlyCount)
+		replyValues: visibleMessageBuckets.map((entry) => entry.replyCount),
+		nonReplyValues: visibleMessageBuckets.map((entry) => entry.nonReplyCount)
 	};
 }

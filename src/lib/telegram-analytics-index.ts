@@ -3,6 +3,7 @@ import { buildMembershipIntervals, type MembershipInterval } from './telegram-me
 import { classifyTelegramMessage } from './telegram-text-analyzer';
 import type {
 	MessageBucketAggregate,
+	MessageBucketValueMetric,
 	MessageClassification,
 	NormalizedTimeRange,
 	NormalizedTimeBucket,
@@ -84,29 +85,35 @@ function getUserAuthoredTextLength(message: TelegramExportMessage): number {
 	return extractTextContent(message).length;
 }
 
-function buildBucketKey(bucket: NormalizedTimeBucket, timeRange?: NormalizedTimeRange | null): string {
+function buildBucketKey(
+	bucket: NormalizedTimeBucket,
+	metric: MessageBucketValueMetric,
+	timeRange?: NormalizedTimeRange | null
+): string {
 	if (!timeRange) {
-		return `${bucket.unit}:${bucket.size}:full`;
+		return `${bucket.unit}:${bucket.size}:${metric}:full`;
 	}
 
-	return `${bucket.unit}:${bucket.size}:${timeRange.startTimestamp}:${timeRange.endTimestamp}`;
+	return `${bucket.unit}:${bucket.size}:${metric}:${timeRange.startTimestamp}:${timeRange.endTimestamp}`;
 }
 
 export function getBucketAggregateCache(
 	index: AnalyticsIndex,
 	bucket: NormalizedTimeBucket,
+	metric: MessageBucketValueMetric,
 	timeRange?: NormalizedTimeRange | null
 ): MessageBucketAggregate[] | undefined {
-	return index.bucketAggregatesByKey.get(buildBucketKey(bucket, timeRange));
+	return index.bucketAggregatesByKey.get(buildBucketKey(bucket, metric, timeRange));
 }
 
 export function setBucketAggregateCache(
 	index: AnalyticsIndex,
 	bucket: NormalizedTimeBucket,
+	metric: MessageBucketValueMetric,
 	timeRange: NormalizedTimeRange | null,
 	aggregates: MessageBucketAggregate[]
 ) {
-	index.bucketAggregatesByKey.set(buildBucketKey(bucket, timeRange), aggregates);
+	index.bucketAggregatesByKey.set(buildBucketKey(bucket, metric, timeRange), aggregates);
 }
 
 export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): AnalyticsIndex {

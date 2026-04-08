@@ -51,9 +51,8 @@ export type MessageBucketAggregate = {
 	tooltipLabel: string;
 	start: string;
 	end: string;
-	otherCount: number;
-	lowInfoCount: number;
-	mediaOnlyCount: number;
+	replyCount: number;
+	nonReplyCount: number;
 };
 
 export type MessageBucketValueMetric = 'messages' | 'characters';
@@ -80,9 +79,8 @@ export type MessageBucketsChart = {
 	trimmedEdgeBucketCount: number;
 	labels: string[];
 	tooltipLabels: string[];
-	otherValues: number[];
-	lowInfoValues: number[];
-	mediaOnlyValues: number[];
+	replyValues: number[];
+	nonReplyValues: number[];
 };
 
 export type TelegramAnalysisReport = {
@@ -97,6 +95,8 @@ export type TelegramAnalysisReport = {
 	};
 	messageBuckets: MessageBucketsChart;
 	totalMessages: number;
+	replyMessages: number;
+	nonReplyMessages: number;
 	otherMessages: number;
 	lowInfoMessages: number;
 	mediaOnlyMessages: number;

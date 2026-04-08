@@ -10,6 +10,31 @@
 	};
 
 	let { report, activeTheme }: Props = $props();
+
+	function withAlpha(hexColor: string, alpha: number): string {
+		const normalized = hexColor.replace('#', '');
+		const expanded =
+			normalized.length === 3
+				? normalized
+						.split('')
+						.map((character) => character + character)
+						.join('')
+				: normalized;
+
+		if (expanded.length !== 6) {
+			return hexColor;
+		}
+
+		const red = Number.parseInt(expanded.slice(0, 2), 16);
+		const green = Number.parseInt(expanded.slice(2, 4), 16);
+		const blue = Number.parseInt(expanded.slice(4, 6), 16);
+
+		return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+	}
+
+	const participantLineColor = $derived(activeTheme.chart.nonReplyBar);
+	const participantFillColor = $derived(withAlpha(activeTheme.chart.nonReplyBar, 0.16));
+	const activeParticipantColor = $derived(activeTheme.chart.replyBar);
 </script>
 
 <section class="mb-4 grid gap-4 pt-4 lg:grid-cols-3" aria-label="Chat summary">
@@ -35,7 +60,7 @@
 					</strong>
 					<span class="text-xs uppercase tracking-widest text-app-subtle">Participants</span>
 				</div>
-				<div class="flex items-baseline gap-2 whitespace-nowrap" style={`color: ${activeTheme.miniArea.overlay}`}>
+				<div class="flex items-baseline gap-2 whitespace-nowrap" style={`color: ${activeParticipantColor}`}>
 					<b class="text-xl leading-none font-semibold font-display">
 						<AnimatedNumber value={report.participantTimeline.currentActiveCount} duration={700} />
 					</b>
@@ -47,9 +72,9 @@
 			labels={report.participantTimeline.labels}
 			values={report.participantTimeline.values}
 			overlayValues={report.participantTimeline.activeValues}
-			lineColor={activeTheme.miniArea.line}
-			fillColor={activeTheme.miniArea.fill}
-			overlayLineColor={activeTheme.miniArea.overlay}
+			lineColor={participantLineColor}
+			fillColor={participantFillColor}
+			overlayLineColor={activeParticipantColor}
 		/>
 	</article>
 </section>
