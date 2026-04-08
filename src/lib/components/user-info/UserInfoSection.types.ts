@@ -1,4 +1,4 @@
-import type { MessageBucketsChart as MessageBucketsChartData } from '$lib/telegram-analysis';
+import type { MessageBucketsChart as MessageBucketsChartData } from '$lib/analyzers/telegram-analysis';
 
 export type PeriodKey = 'day' | 'week';
 export type MetricKey = 'messages' | 'characters';

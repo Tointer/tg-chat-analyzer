@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SegmentedSelector from '$lib/SegmentedSelector.svelte';
+	import SegmentedSelector from '../user-info/SegmentedSelector.svelte';
 
 	type PeriodKey = 'day' | 'week';
 
@@ -23,7 +23,7 @@
 
 <SegmentedSelector
 	selectedValue={selectedPeriod}
-	onSelectValue={(value) => onSelectPeriod(value as PeriodKey)}
+	onSelectValue={(value: string) => onSelectPeriod(value as PeriodKey)}
 	{options}
 	{ariaLabel}
 />

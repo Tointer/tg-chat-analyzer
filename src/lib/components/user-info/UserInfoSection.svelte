@@ -1,6 +1,6 @@
 <script lang="ts">
-	import MessageBucketsChart from './MessageBucketsChart.svelte';
-	import MessagePeriodToggle from './MessagePeriodToggle.svelte';
+	import MessageBucketsChart from '../charts/MessageBucketsChart.svelte';
+	import MessagePeriodToggle from '../charts/MessagePeriodToggle.svelte';
 	import ReplyPeersList from './ReplyPeersList.svelte';
 	import SegmentedSelector from './SegmentedSelector.svelte';
 	import UserInfoUserList from './UserInfoUserList.svelte';

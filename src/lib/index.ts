@@ -1,29 +1,32 @@
 // place files you want to import through the `$lib` alias in this folder.
 
-export { default as ChatPageHeader } from './ChatPageHeader.svelte';
-export { default as ChatSummaryCards } from './ChatSummaryCards.svelte';
-export { default as MessageBucketsChart } from './MessageBucketsChart.svelte';
-export { default as MessagePeriodToggle } from './MessagePeriodToggle.svelte';
-export { default as RankedListItem } from './RankedListItem.svelte';
-export { default as ReplyPeersList } from './ReplyPeersList.svelte';
-export { default as SegmentedSelector } from './SegmentedSelector.svelte';
-export { default as UserInfoUserList } from './UserInfoUserList.svelte';
-export { default as MessageBucketsSection } from './MessageBucketsSection.svelte';
-export { default as UserInfoSection } from './UserInfoSection.svelte';
-export { ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD } from './telegram-analysis-config';
-export { buildTelegramAnalyticsIndex } from './telegram-analytics-index';
+export { default as ChatPageHeader } from './components/layout/ChatPageHeader.svelte';
+export { default as ChatSummaryCards } from './components/layout/ChatSummaryCards.svelte';
+export { default as AnimatedNumber } from './components/charts/AnimatedNumber.svelte';
+export { default as MessageBucketsChart } from './components/charts/MessageBucketsChart.svelte';
+export { default as MessageBucketsSection } from './components/charts/MessageBucketsSection.svelte';
+export { default as MessagePeriodToggle } from './components/charts/MessagePeriodToggle.svelte';
+export { default as MiniAreaChart } from './components/charts/MiniAreaChart.svelte';
+export { default as RankedListItem } from './components/user-info/RankedListItem.svelte';
+export { default as ReplyPeersList } from './components/user-info/ReplyPeersList.svelte';
+export { default as SegmentedSelector } from './components/user-info/SegmentedSelector.svelte';
+export { default as UserInfoSection } from './components/user-info/UserInfoSection.svelte';
+export { default as UserInfoUserList } from './components/user-info/UserInfoUserList.svelte';
+export { ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD } from './analyzers/telegram-analysis-config';
+export { buildTelegramAnalyticsIndex } from './analyzers/telegram-analytics-index';
 export {
 	areUsersCoPresentAtTimestamp,
 	getMembershipIntervalsForUser,
 	isUserActiveAtTimestamp
-} from './telegram-membership-index';
-export { getTelegramReplyPairStats, getTelegramReplyPairStatsByUsers } from './telegram-reply-pair-stats';
-export { getTelegramUserMessageBuckets, getTelegramUserMetricBuckets } from './telegram-user-message-buckets';
+} from './analyzers/telegram-membership-index';
+export { analyzeTelegramAnalyticsIndex, analyzeTelegramExport, buildMessageBucketsChart, classifyTelegramMessage } from './analyzers/telegram-analysis';
+export { getTelegramReplyPairStats, getTelegramReplyPairStatsByUsers } from './analyzers/telegram-reply-pair-stats';
+export { getTelegramUserMessageBuckets, getTelegramUserMetricBuckets } from './analyzers/telegram-user-message-buckets';
 export {
 	getTelegramUserReplyFavorites,
 	getTelegramUserReplyFavoritesSummary
-} from './telegram-user-reply-favorites';
-export { getTelegramUserStats, getTelegramUserStatsById } from './telegram-user-stats';
+} from './analyzers/telegram-user-reply-favorites';
+export { getTelegramUserStats, getTelegramUserStatsById } from './analyzers/telegram-user-stats';
 export {
 	activeThemeName,
 	appThemes,
@@ -36,10 +39,22 @@ export {
 	themeOrder
 } from './themes';
 export type { AppTheme, AppThemeName } from './themes';
-export type { MembershipInterval } from './telegram-membership-index';
-export type { TelegramReplyPairStats } from './telegram-reply-pair-stats';
+export type {
+	MessageBucketValueMetric,
+	MessageClassification,
+	TimeBucketSpec,
+	TimeRangeSpec,
+	TelegramAnalysisOptions,
+	TelegramAnalysisReport,
+	TelegramExport,
+	TelegramExportMessage,
+	TelegramTextEntity,
+	TelegramTextPart
+} from './analyzers/telegram-analysis';
+export type { MembershipInterval } from './analyzers/telegram-membership-index';
+export type { TelegramReplyPairStats } from './analyzers/telegram-reply-pair-stats';
 export type {
 	TelegramUserReplyFavorite,
 	TelegramUserReplyFavoritesSummary
-} from './telegram-user-reply-favorites';
-export type { TelegramUserStats } from './telegram-user-stats';
+} from './analyzers/telegram-user-reply-favorites';
+export type { TelegramUserStats } from './analyzers/telegram-user-stats';

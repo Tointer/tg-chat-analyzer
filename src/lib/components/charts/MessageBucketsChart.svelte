@@ -9,7 +9,7 @@
 		TooltipItem
 	} from 'chart.js';
 	import type { AppTheme } from '$lib';
-	import type { MessageBucketsChart as MessageBucketsChartData } from '$lib/telegram-analysis';
+	import type { MessageBucketsChart as MessageBucketsChartData } from '$lib/analyzers/telegram-analysis';
 
 	type Props = {
 		messageBuckets: MessageBucketsChartData;

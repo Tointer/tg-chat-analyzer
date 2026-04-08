@@ -1,16 +1,16 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { buildTelegramAnalyticsIndex } from '$lib/telegram-analytics-index';
+import { buildTelegramAnalyticsIndex } from '$lib/analyzers/telegram-analytics-index';
 import {
 	analyzeTelegramAnalyticsIndex,
 	type MessageBucketValueMetric,
 	type MessageBucketsChart,
 	type TelegramExport
-} from '$lib/telegram-analysis';
-import { getTelegramUserMetricBuckets } from '$lib/telegram-user-message-buckets';
-import { getTelegramUserReplyFavoritesSummary } from '$lib/telegram-user-reply-favorites';
-import { getTelegramUserStats } from '$lib/telegram-user-stats';
-import type { TimeBucketSpec, TimeRangeSpec } from '$lib/telegram-analysis';
+} from '$lib/analyzers/telegram-analysis';
+import { getTelegramUserMetricBuckets } from '$lib/analyzers/telegram-user-message-buckets';
+import { getTelegramUserReplyFavoritesSummary } from '$lib/analyzers/telegram-user-reply-favorites';
+import { getTelegramUserStats } from '$lib/analyzers/telegram-user-stats';
+import type { TimeBucketSpec, TimeRangeSpec } from '$lib/analyzers/telegram-analysis';
 import type { PageServerLoad } from './$types';
 
 const MESSAGE_BUCKETS: Record<'day' | 'week', TimeBucketSpec> = {

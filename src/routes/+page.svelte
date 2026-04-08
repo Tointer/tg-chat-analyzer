@@ -10,7 +10,7 @@
 		UserInfoSection,
 		themeOrder
 	} from '$lib';
-	import type { MessageBucketsChart, TelegramAnalysisReport } from '$lib/telegram-analysis';
+	import type { MessageBucketsChart, TelegramAnalysisReport } from '$lib/analyzers/telegram-analysis';
 
 	type PeriodKey = 'day' | 'week';
 	type UserMetricKey = 'messages' | 'characters';

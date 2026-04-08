@@ -1,8 +1,8 @@
 <script lang="ts">
-	import AnimatedNumber from '$lib/AnimatedNumber.svelte';
-	import MiniAreaChart from '$lib/MiniAreaChart.svelte';
+	import AnimatedNumber from '../charts/AnimatedNumber.svelte';
+	import MiniAreaChart from '../charts/MiniAreaChart.svelte';
 	import type { AppTheme } from '$lib';
-	import type { TelegramAnalysisReport } from '$lib/telegram-analysis';
+	import type { TelegramAnalysisReport } from '$lib/analyzers/telegram-analysis';
 
 	type Props = {
 		report: TelegramAnalysisReport;

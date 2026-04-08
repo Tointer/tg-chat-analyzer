@@ -2,7 +2,7 @@
 	import type { AppTheme } from '$lib';
 	import MessageBucketsChart from './MessageBucketsChart.svelte';
 	import MessagePeriodToggle from './MessagePeriodToggle.svelte';
-	import type { TelegramAnalysisReport } from '$lib/telegram-analysis';
+	import type { TelegramAnalysisReport } from '$lib/analyzers/telegram-analysis';
 
 	type PeriodKey = 'day' | 'week';
 
