@@ -2,27 +2,7 @@
 	import { onMount } from 'svelte';
 	import ChartJS from 'chart.js/auto';
 	import type { BorderRadius, Chart, ScriptableContext } from 'chart.js';
-
-	type WeeklyChartData = {
-		chatName: string;
-		weeklyMessages: {
-			labels: string[];
-			textValues: number[];
-			mediaOnlyValues: number[];
-		};
-		totalMessages: number;
-		textMessages: number;
-		mediaOnlyMessages: number;
-		weekCount: number;
-		busiestWeek: {
-			label: string;
-			count: number;
-		};
-		range: {
-			start: string;
-			end: string;
-		};
-	};
+	import type { WeeklyChartData } from '$lib/telegram-analysis';
 
 	let { data }: { data: WeeklyChartData } = $props();
 
