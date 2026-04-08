@@ -1,5 +1,11 @@
 {
 	"files.associations": {
 		"*.css": "tailwindcss"
+	},
+	"chat.tools.terminal.autoApprove": {
+		"/^bun run check$/": {
+			"approve": true,
+			"matchCommandLine": true
+		}
 	}
 }

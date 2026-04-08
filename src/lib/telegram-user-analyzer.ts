@@ -93,7 +93,7 @@ export function aggregateActiveParticipantCounts(
 		let activeCount = 0;
 
 		for (const count of perUserCounts.values()) {
-			if (count >= 5) {
+			if (count >= 10) {
 				activeCount += 1;
 			}
 		}

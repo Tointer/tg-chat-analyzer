@@ -1,15 +1,49 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import ChartJS from 'chart.js/auto';
-	import type { BorderRadius, Chart, ScriptableContext } from 'chart.js';
+	import type { BorderRadius, Chart, ScriptableContext, TooltipItem } from 'chart.js';
 	import AnimatedNumber from '$lib/AnimatedNumber.svelte';
 	import MiniAreaChart from '$lib/MiniAreaChart.svelte';
-	import type { WeeklyChartData } from '$lib/telegram-analysis';
+	import type { TelegramAnalysisReport } from '$lib/telegram-analysis';
 
-	let { data }: { data: WeeklyChartData } = $props();
+	type PeriodKey = 'day' | 'week';
 
-	let canvas: HTMLCanvasElement;
+	type PageData = {
+		selectedPeriod: 'day' | 'week';
+		periodReports: Record<PeriodKey, TelegramAnalysisReport>;
+	};
+
+	let { data }: { data: PageData } = $props();
+	let selectedPeriod = $state<PeriodKey>('week');
+
+	const currentReport = $derived(data.periodReports[selectedPeriod]);
+
+	let canvas = $state<HTMLCanvasElement | undefined>(undefined);
 	let chart: Chart | undefined;
+
+	function getChartDatasets(report: TelegramAnalysisReport) {
+		return [
+			{
+				label: 'Media only',
+				data: report.messageBuckets.mediaOnlyValues,
+				backgroundColor: '#f59e0b',
+				hoverBackgroundColor: '#d97706',
+				borderRadius: getMediaBorderRadius,
+				borderSkipped: false,
+				stack: 'messages',
+				maxBarThickness: 28
+			},
+			{
+				label: 'With text',
+				data: report.messageBuckets.textValues,
+				backgroundColor: '#0f766e',
+				hoverBackgroundColor: '#115e59',
+				borderRadius: getTextBorderRadius,
+				borderSkipped: false,
+				stack: 'messages',
+				maxBarThickness: 28
+			}
+		];
+	}
 
 	function getTopOnlyRadius(shouldRoundTop: boolean): BorderRadius {
 		return shouldRoundTop
@@ -18,107 +52,141 @@
 	}
 
 	function getTextBorderRadius(context: ScriptableContext<'bar'>): BorderRadius {
-		const value = data.weeklyMessages.textValues[context.dataIndex] ?? 0;
+		const value = currentReport.messageBuckets.textValues[context.dataIndex] ?? 0;
 		return getTopOnlyRadius(value > 0);
 	}
 
 	function getMediaBorderRadius(context: ScriptableContext<'bar'>): BorderRadius {
-		const mediaValue = data.weeklyMessages.mediaOnlyValues[context.dataIndex] ?? 0;
-		const textValue = data.weeklyMessages.textValues[context.dataIndex] ?? 0;
+		const mediaValue = currentReport.messageBuckets.mediaOnlyValues[context.dataIndex] ?? 0;
+		const textValue = currentReport.messageBuckets.textValues[context.dataIndex] ?? 0;
 		return getTopOnlyRadius(mediaValue > 0 && textValue === 0);
 	}
 
-	onMount(() => {
-		chart = new ChartJS(canvas, {
-			type: 'bar',
-			data: {
-				labels: data.weeklyMessages.labels,
-				datasets: [
-					{
-						label: 'Media only',
-						data: data.weeklyMessages.mediaOnlyValues,
-						backgroundColor: '#f59e0b',
-						hoverBackgroundColor: '#d97706',
-						borderRadius: getMediaBorderRadius,
-						borderSkipped: false,
-						stack: 'messages',
-						maxBarThickness: 28
-					},
-					{
-						label: 'With text',
-						data: data.weeklyMessages.textValues,
-						backgroundColor: '#0f766e',
-						hoverBackgroundColor: '#115e59',
-						borderRadius: getTextBorderRadius,
-						borderSkipped: false,
-						stack: 'messages',
-						maxBarThickness: 28
-					}
-				]
-			},
-			options: {
-				responsive: true,
-				maintainAspectRatio: false,
-				interaction: {
-					mode: 'index',
-					intersect: false
+	function syncChart(report: TelegramAnalysisReport) {
+		const labels = report.messageBuckets.labels;
+		const textValues = report.messageBuckets.textValues;
+		const mediaOnlyValues = report.messageBuckets.mediaOnlyValues;
+		const datasets = getChartDatasets(report);
+
+		if (!canvas) {
+			chart?.destroy();
+			chart = undefined;
+			return;
+		}
+
+		if (!chart) {
+			chart = new ChartJS(canvas, {
+				type: 'bar',
+				data: {
+					labels,
+					datasets: [
+						{
+							...datasets[0],
+							data: mediaOnlyValues
+						},
+						{
+							...datasets[1],
+							data: textValues
+						}
+					]
 				},
-				plugins: {
-					legend: {
-						display: true,
-						position: 'top',
-						labels: {
-							color: '#27272a',
-							usePointStyle: true,
-							pointStyle: 'rectRounded',
-							boxWidth: 12,
-							padding: 18
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					interaction: {
+						mode: 'index',
+						intersect: false
+					},
+					plugins: {
+						legend: {
+							display: true,
+							position: 'top',
+							labels: {
+								color: '#27272a',
+								usePointStyle: true,
+								pointStyle: 'rectRounded',
+								boxWidth: 12,
+								padding: 18
+							}
+						},
+						tooltip: {
+							displayColors: false,
+							callbacks: {
+								title(items: TooltipItem<'bar'>[]) {
+									const [item] = items;
+									if (!item) {
+										return '';
+									}
+
+									return report.messageBuckets.tooltipLabels[item.dataIndex] ?? item.label ?? '';
+								},
+								footer(items: TooltipItem<'bar'>[]) {
+									const total = items.reduce((sum, item) => sum + (item.parsed.y ?? 0), 0);
+									return `Total: ${total}`;
+								}
+							}
 						}
 					},
-					tooltip: {
-						displayColors: false,
-						callbacks: {
-							title(items) {
-								const [item] = items;
-								return item?.label ? `Week of ${item.label}` : '';
+					scales: {
+						x: {
+							stacked: true,
+							grid: {
+								display: false
 							},
-							footer(items) {
-								const total = items.reduce((sum, item) => sum + (item.parsed.y ?? 0), 0);
-								return `Total: ${total}`;
+							ticks: {
+								color: '#3f3f46',
+								maxRotation: 0,
+								autoSkip: true,
+								maxTicksLimit: 12
+							}
+						},
+						y: {
+							stacked: true,
+							beginAtZero: true,
+							ticks: {
+								precision: 0,
+								color: '#3f3f46'
+							},
+							grid: {
+								color: 'rgba(15, 23, 42, 0.08)'
 							}
 						}
 					}
-				},
-				scales: {
-					x: {
-						stacked: true,
-						grid: {
-							display: false
-						},
-						ticks: {
-							color: '#3f3f46',
-							maxRotation: 0,
-							autoSkip: true,
-							maxTicksLimit: 12
-						}
-					},
-					y: {
-						stacked: true,
-						beginAtZero: true,
-						ticks: {
-							precision: 0,
-							color: '#3f3f46'
-						},
-						grid: {
-							color: 'rgba(15, 23, 42, 0.08)'
-						}
-					}
 				}
-			}
-		});
+			});
+			return;
+		}
 
+		chart.data.labels = labels;
+		chart.data.datasets = [
+			{
+				...datasets[0],
+				data: mediaOnlyValues
+			},
+			{
+				...datasets[1],
+				data: textValues
+			}
+		];
+		chart.update();
+	}
+
+	function selectPeriod(period: PeriodKey) {
+		selectedPeriod = period;
+	}
+
+	$effect(() => {
+		syncChart(currentReport);
+	});
+
+	$effect(() => {
+		selectedPeriod = data.selectedPeriod;
+	});
+
+	$effect(() => {
 		return () => {
 			chart?.destroy();
+			chart = undefined;
 		};
 	});
 </script>
@@ -127,7 +195,7 @@
 	<title>Telegram Chat Analyzer</title>
 	<meta
 		name="description"
-		content="Analyze Telegram exports and explore weekly message volume."
+		content={`Analyze Telegram exports and explore message volume by ${currentReport.messageBuckets.groupingLabel}.`}
 	/>
 </svelte:head>
 
@@ -135,20 +203,21 @@
 	<section class="hero">
 		<div>
 			<p class="eyebrow">Telegram Chat Analyzer</p>
-			<h1>{data.chatName}</h1>
+			<h1>{currentReport.chatName}</h1>
 			<p class="lede">
-				Weekly message volume for the imported Telegram history. Service events are excluded.
+				Message volume grouped by {currentReport.messageBuckets.groupingLabel}. Service events are excluded.
 			</p>
+			<p class="chart-note">The first and last periods are omitted from the chart because they are incomplete.</p>
 		</div>
 	</section>
 
 	<section class="stats-grid" aria-label="Chat summary">
 		<article class="stat-card">
 			<p>Total messages</p>
-			<strong><AnimatedNumber value={data.totalMessages} /></strong>
+			<strong><AnimatedNumber value={currentReport.totalMessages} /></strong>
 			<div class="stat-subset">
 				<span>Media-only messages</span>
-				<b><AnimatedNumber value={data.mediaOnlyMessages} duration={700} /></b>
+				<b><AnimatedNumber value={currentReport.mediaOnlyMessages} duration={700} /></b>
 			</div>
 		</article>
 
@@ -156,19 +225,19 @@
 			<div class="participant-header">
 				<div class="participant-metrics">
 					<div class="participant-metric-row participant-metric-row-primary">
-						<strong><AnimatedNumber value={data.participantTimeline.currentCount} /></strong>
+						<strong><AnimatedNumber value={currentReport.participantTimeline.currentCount} /></strong>
 						<span>Participants</span>
 					</div>
 					<div class="participant-metric-row participant-metric-row-secondary">
-						<b><AnimatedNumber value={data.participantTimeline.currentActiveCount} duration={700} /></b>
+						<b><AnimatedNumber value={currentReport.participantTimeline.currentActiveCount} duration={700} /></b>
 						<span>Active</span>
 					</div>
 				</div>
 			</div>
 			<MiniAreaChart
-				labels={data.participantTimeline.labels}
-				values={data.participantTimeline.values}
-				overlayValues={data.participantTimeline.activeValues}
+				labels={currentReport.participantTimeline.labels}
+				values={currentReport.participantTimeline.values}
+				overlayValues={currentReport.participantTimeline.activeValues}
 				lineColor="#0f766e"
 				fillColor="rgba(15, 118, 110, 0.14)"
 				overlayLineColor="#f59e0b"
@@ -179,13 +248,39 @@
 	<section class="chart-card">
 		<div class="chart-header">
 			<div>
-				<p class="eyebrow">Chart</p>
-				<h2>Messages per week</h2>
+				<h2>{currentReport.messageBuckets.title}</h2>
+			</div>
+			<div class="period-switcher" aria-label="Message period selector">
+				<button
+					aria-pressed={selectedPeriod === 'week'}
+					class:period-toggle-active={selectedPeriod === 'week'}
+					class="period-toggle"
+					type="button"
+					onclick={() => selectPeriod('week')}
+				>
+					Weeks
+				</button>
+				<button
+					aria-pressed={selectedPeriod === 'day'}
+					class:period-toggle-active={selectedPeriod === 'day'}
+					class="period-toggle"
+					type="button"
+					onclick={() => selectPeriod('day')}
+				>
+					Days
+				</button>
 			</div>
 		</div>
 
 		<div class="chart-frame">
-			<canvas bind:this={canvas} aria-label="Messages per week bar chart"></canvas>
+			{#if currentReport.messageBuckets.labels.length > 0}
+				<canvas
+					bind:this={canvas}
+					aria-label={`${currentReport.messageBuckets.title} bar chart`}
+				></canvas>
+			{:else}
+				<p class="chart-empty">Not enough complete periods to draw this chart yet.</p>
+			{/if}
 		</div>
 	</section>
 </div>
@@ -238,6 +333,13 @@
 		font-size: 1.05rem;
 		line-height: 1.6;
 		color: #3f3f46;
+	}
+
+	.chart-note {
+		margin: 0.85rem 0 0;
+		font-size: 0.92rem;
+		line-height: 1.5;
+		color: #52525b;
 	}
 
 	.stat-card,
@@ -350,9 +452,50 @@
 
 	.chart-header {
 		display: flex;
-		justify-content: flex-start;
+		justify-content: space-between;
 		align-items: end;
+		gap: 1rem;
+		flex-wrap: wrap;
 		margin-bottom: 1rem;
+	}
+
+	.period-switcher {
+		display: inline-flex;
+		padding: 0.3rem;
+		border-radius: 999px;
+		background: rgba(15, 23, 42, 0.05);
+		border: 1px solid rgba(15, 118, 110, 0.12);
+	}
+
+	.period-toggle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.55rem 0.95rem;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		cursor: pointer;
+		font-size: 0.88rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: #3f3f46;
+		text-decoration: none;
+		transition:
+			background-color 160ms ease,
+			color 160ms ease,
+			box-shadow 160ms ease;
+	}
+
+	.period-toggle:hover {
+		color: #18181b;
+	}
+
+	.period-toggle-active {
+		background: #0f766e;
+		color: white;
+		box-shadow: 0 10px 24px rgba(15, 118, 110, 0.2);
 	}
 
 	h2 {
@@ -363,6 +506,20 @@
 	.chart-frame {
 		height: min(60vh, 34rem);
 		min-height: 22rem;
+	}
+
+	.chart-empty {
+		display: grid;
+		place-items: center;
+		height: 100%;
+		margin: 0;
+		border-radius: 1.25rem;
+		border: 1px dashed rgba(15, 118, 110, 0.18);
+		background: rgba(255, 255, 255, 0.38);
+		color: #52525b;
+		font-size: 0.98rem;
+		text-align: center;
+		padding: 1.5rem;
 	}
 
 	@media (max-width: 860px) {

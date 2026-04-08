@@ -1,54 +1,88 @@
 import { aggregateParticipantTimeline } from './telegram-group-analyzer';
-import { aggregateMessagesByWeek, classifyTelegramMessage } from './telegram-text-analyzer';
-import type { TelegramExport, WeeklyChartData } from './telegram-analysis-types';
+import {
+	getTimeBucketGroupingLabel,
+	getTimeBucketTitle,
+	normalizeTimeBucket
+} from './telegram-analysis-shared';
+import { aggregateMessagesByTimeBucket, classifyTelegramMessage } from './telegram-text-analyzer';
+import type {
+	TelegramAnalysisOptions,
+	TelegramAnalysisReport,
+	TelegramExport
+} from './telegram-analysis-types';
 
 export { classifyTelegramMessage };
 export type {
 	MessageClassification,
+	TimeBucketSpec,
+	TelegramAnalysisOptions,
+	TelegramAnalysisReport,
 	TelegramExport,
 	TelegramExportMessage,
 	TelegramTextEntity,
-	TelegramTextPart,
-	WeeklyChartData
+	TelegramTextPart
 } from './telegram-analysis-types';
 
-export function analyzeTelegramExport(telegramExport: TelegramExport): WeeklyChartData {
+export function analyzeTelegramExport(
+	telegramExport: TelegramExport,
+	options: TelegramAnalysisOptions = {}
+): TelegramAnalysisReport {
 	const messages = telegramExport.messages ?? [];
 	const participantTimeline = aggregateParticipantTimeline(messages);
-	const weeklyMessages = aggregateMessagesByWeek(messages);
-	const totalMessages = weeklyMessages.reduce(
-		(sum, week) => sum + week.textCount + week.mediaOnlyCount,
+	const bucket = normalizeTimeBucket(options.messageBuckets);
+	const aggregatedMessageBuckets = aggregateMessagesByTimeBucket(messages, bucket);
+	const visibleMessageBuckets =
+		aggregatedMessageBuckets.length > 2 ? aggregatedMessageBuckets.slice(1, -1) : [];
+	const totalMessages = aggregatedMessageBuckets.reduce(
+		(sum, entry) => sum + entry.textCount + entry.mediaOnlyCount,
 		0
 	);
-	const textMessages = weeklyMessages.reduce((sum, week) => sum + week.textCount, 0);
-	const mediaOnlyMessages = weeklyMessages.reduce((sum, week) => sum + week.mediaOnlyCount, 0);
-	const busiestWeek = weeklyMessages.reduce(
-		(current, week) =>
-			week.textCount + week.mediaOnlyCount > current.textCount + current.mediaOnlyCount
-				? week
+	const textMessages = aggregatedMessageBuckets.reduce((sum, entry) => sum + entry.textCount, 0);
+	const mediaOnlyMessages = aggregatedMessageBuckets.reduce(
+		(sum, entry) => sum + entry.mediaOnlyCount,
+		0
+	);
+	const busiestBucket = visibleMessageBuckets.reduce(
+		(current, entry) =>
+			entry.textCount + entry.mediaOnlyCount > current.textCount + current.mediaOnlyCount
+				? entry
 				: current,
-		weeklyMessages[0] ?? { label: 'N/A', textCount: 0, mediaOnlyCount: 0, weekStart: 'N/A' }
+		visibleMessageBuckets[0] ?? {
+			label: 'N/A',
+			tooltipLabel: 'N/A',
+			start: 'N/A',
+			end: 'N/A',
+			textCount: 0,
+			mediaOnlyCount: 0
+		}
 	);
 
 	return {
 		chatName: telegramExport.name ?? 'Telegram Chat',
 		participantTimeline,
-		weeklyMessages: {
-			labels: weeklyMessages.map((week) => week.label),
-			textValues: weeklyMessages.map((week) => week.textCount),
-			mediaOnlyValues: weeklyMessages.map((week) => week.mediaOnlyCount)
+		messageBuckets: {
+			bucket,
+			title: getTimeBucketTitle(bucket),
+			groupingLabel: getTimeBucketGroupingLabel(bucket),
+			trimmedEdgeBucketCount:
+				aggregatedMessageBuckets.length >= 2 ? Math.min(2, aggregatedMessageBuckets.length) : 0,
+			labels: visibleMessageBuckets.map((entry) => entry.label),
+			tooltipLabels: visibleMessageBuckets.map((entry) => entry.tooltipLabel),
+			textValues: visibleMessageBuckets.map((entry) => entry.textCount),
+			mediaOnlyValues: visibleMessageBuckets.map((entry) => entry.mediaOnlyCount)
 		},
 		totalMessages,
 		textMessages,
 		mediaOnlyMessages,
-		weekCount: weeklyMessages.length,
-		busiestWeek: {
-			label: busiestWeek.label,
-			count: busiestWeek.textCount + busiestWeek.mediaOnlyCount
+		bucketCount: visibleMessageBuckets.length,
+		busiestBucket: {
+			label: busiestBucket.label,
+			tooltipLabel: busiestBucket.tooltipLabel,
+			count: busiestBucket.textCount + busiestBucket.mediaOnlyCount
 		},
 		range: {
-			start: weeklyMessages[0]?.label ?? 'N/A',
-			end: weeklyMessages.at(-1)?.label ?? 'N/A'
+			start: visibleMessageBuckets[0]?.start ?? 'N/A',
+			end: visibleMessageBuckets.at(-1)?.end ?? 'N/A'
 		}
 	};
 }

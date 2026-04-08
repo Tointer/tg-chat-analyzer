@@ -30,14 +30,32 @@ export type TelegramExport = {
 	messages?: TelegramExportMessage[];
 };
 
-export type WeeklyAggregate = {
-	label: string;
-	textCount: number;
-	mediaOnlyCount: number;
-	weekStart: string;
+export type TimeBucketUnit = 'day' | 'week' | 'month';
+
+export type TimeBucketSpec = {
+	unit: TimeBucketUnit;
+	size?: number;
 };
 
-export type WeeklyChartData = {
+export type NormalizedTimeBucket = {
+	unit: TimeBucketUnit;
+	size: number;
+};
+
+export type MessageBucketAggregate = {
+	label: string;
+	tooltipLabel: string;
+	start: string;
+	end: string;
+	textCount: number;
+	mediaOnlyCount: number;
+};
+
+export type TelegramAnalysisOptions = {
+	messageBuckets?: TimeBucketSpec;
+};
+
+export type TelegramAnalysisReport = {
 	chatName: string;
 	participantTimeline: {
 		labels: string[];
@@ -47,17 +65,23 @@ export type WeeklyChartData = {
 		currentActiveCount: number;
 		peakCount: number;
 	};
-	weeklyMessages: {
+	messageBuckets: {
+		bucket: NormalizedTimeBucket;
+		title: string;
+		groupingLabel: string;
+		trimmedEdgeBucketCount: number;
 		labels: string[];
+		tooltipLabels: string[];
 		textValues: number[];
 		mediaOnlyValues: number[];
 	};
 	totalMessages: number;
 	textMessages: number;
 	mediaOnlyMessages: number;
-	weekCount: number;
-	busiestWeek: {
+	bucketCount: number;
+	busiestBucket: {
 		label: string;
+		tooltipLabel: string;
 		count: number;
 	};
 	range: {

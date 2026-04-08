@@ -1,12 +1,16 @@
 import {
-	formatWeekLabel,
+	getTimeBucketAxisLabel,
+	getTimeBucketDateRange,
 	getMessageTimestamp,
-	getWeekStart
+	getTimeBucketStart,
+	getTimeBucketTooltipLabel,
+	normalizeTimeBucket
 } from './telegram-analysis-shared';
 import type {
 	MessageClassification,
+	MessageBucketAggregate,
 	TelegramExportMessage,
-	WeeklyAggregate
+	TimeBucketSpec
 } from './telegram-analysis-types';
 
 const EMOJI_TEXT_DETECTION = /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u;
@@ -101,8 +105,19 @@ export function classifyTelegramMessage(message: TelegramExportMessage): Message
 	return 'text';
 }
 
-export function aggregateMessagesByWeek(messages: TelegramExportMessage[]): WeeklyAggregate[] {
-	const counts = new Map<string, { textCount: number; mediaOnlyCount: number }>();
+export function aggregateMessagesByTimeBucket(
+	messages: TelegramExportMessage[],
+	bucket?: TimeBucketSpec
+): MessageBucketAggregate[] {
+	const normalizedBucket = normalizeTimeBucket(bucket);
+	const counts = new Map<
+		string,
+		{
+			start: Date;
+			textCount: number;
+			mediaOnlyCount: number;
+		}
+	>();
 
 	for (const message of messages) {
 		const timestamp = getMessageTimestamp(message);
@@ -112,25 +127,35 @@ export function aggregateMessagesByWeek(messages: TelegramExportMessage[]): Week
 			continue;
 		}
 
-		const weekStart = getWeekStart(new Date(timestamp));
-		const key = formatWeekLabel(weekStart);
-		const weekCounts = counts.get(key) ?? { textCount: 0, mediaOnlyCount: 0 };
+		const bucketStart = getTimeBucketStart(timestamp, normalizedBucket);
+		const key = bucketStart.toISOString();
+		const bucketCounts = counts.get(key) ?? {
+			start: bucketStart,
+			textCount: 0,
+			mediaOnlyCount: 0
+		};
 
 		if (classification === 'media-only') {
-			weekCounts.mediaOnlyCount += 1;
+			bucketCounts.mediaOnlyCount += 1;
 		} else {
-			weekCounts.textCount += 1;
+			bucketCounts.textCount += 1;
 		}
 
-		counts.set(key, weekCounts);
+		counts.set(key, bucketCounts);
 	}
 
 	return [...counts.entries()]
 		.sort(([left], [right]) => left.localeCompare(right))
-		.map(([weekStart, count]) => ({
-			label: weekStart,
-			textCount: count.textCount,
-			mediaOnlyCount: count.mediaOnlyCount,
-			weekStart
-		}));
+		.map(([, count]) => {
+			const range = getTimeBucketDateRange(count.start, normalizedBucket);
+
+			return {
+				label: getTimeBucketAxisLabel(count.start, normalizedBucket),
+				tooltipLabel: getTimeBucketTooltipLabel(count.start, normalizedBucket),
+				start: range.start,
+				end: range.end,
+				textCount: count.textCount,
+				mediaOnlyCount: count.mediaOnlyCount
+			};
+		});
 }
