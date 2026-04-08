@@ -19,6 +19,8 @@
 
 	let canvas = $state<HTMLCanvasElement | undefined>(undefined);
 	let chart: Chart | undefined;
+	const periodButtonBaseClass =
+		'inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold uppercase tracking-wide transition-colors transition-shadow duration-150';
 
 	function getChartDatasets(report: TelegramAnalysisReport) {
 		return [
@@ -199,336 +201,122 @@
 	/>
 </svelte:head>
 
-<div class="page-shell">
-	<section class="hero">
-		<div>
-			<p class="eyebrow">Chat Stats</p>
-			<h1>{currentReport.chatName}</h1>
-		</div>
-	</section>
-
-	<section class="stats-grid" aria-label="Chat summary">
-		<article class="stat-card">
-			<p>Total messages</p>
-			<strong><AnimatedNumber value={currentReport.totalMessages} /></strong>
-			<div class="stat-subset">
-				<span>Media-only messages</span>
-				<b><AnimatedNumber value={currentReport.mediaOnlyMessages} duration={700} /></b>
+<div class="min-h-screen">
+	<div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+		<section class="mb-6">
+			<div>
+				<p class="m-0 text-sm uppercase tracking-widest text-teal-700">Chat Stats</p>
+				<h1
+					class="mt-2 mb-0 text-5xl leading-none font-display sm:text-6xl lg:text-7xl"
+				>
+					{currentReport.chatName}
+				</h1>
 			</div>
-		</article>
+		</section>
 
-		<article class="stat-card participant-card">
-			<div class="participant-header">
-				<div class="participant-metrics">
-					<div class="participant-metric-row participant-metric-row-primary">
-						<strong><AnimatedNumber value={currentReport.participantTimeline.currentCount} /></strong>
-						<span>Participants</span>
-					</div>
-					<div class="participant-metric-row participant-metric-row-secondary">
-						<b><AnimatedNumber value={currentReport.participantTimeline.currentActiveCount} duration={700} /></b>
-						<span>Active</span>
+		<section
+			class="mb-4 grid gap-4 lg:grid-cols-3"
+			aria-label="Chat summary"
+		>
+			<article class="surface-card p-5 sm:p-6">
+				<p class="m-0 text-sm uppercase tracking-widest text-teal-700">Total messages</p>
+				<strong
+					class="mt-2 block text-3xl leading-none font-display sm:text-4xl"
+				>
+					<AnimatedNumber value={currentReport.totalMessages} />
+				</strong>
+				<div class="mt-4 border-t border-teal-700/12 pt-3 text-zinc-600">
+					<span class="block text-xs uppercase tracking-wide">
+						Media-only messages
+					</span>
+					<b class="mt-1.5 block text-base font-semibold text-zinc-800 font-display">
+						<AnimatedNumber value={currentReport.mediaOnlyMessages} duration={700} />
+					</b>
+				</div>
+			</article>
+
+			<article class="surface-card flex flex-col justify-between gap-4 p-5 sm:p-6 lg:col-span-2">
+				<div>
+					<div class="flex max-w-full flex-wrap items-baseline gap-x-4 gap-y-2 sm:flex-nowrap">
+						<div class="flex items-baseline gap-2 whitespace-nowrap text-zinc-800">
+							<strong class="text-3xl leading-none font-semibold text-teal-700 font-display">
+								<AnimatedNumber value={currentReport.participantTimeline.currentCount} />
+							</strong>
+							<span class="text-xs uppercase tracking-widest text-zinc-600">
+								Participants
+							</span>
+						</div>
+						<div class="flex items-baseline gap-2 whitespace-nowrap text-zinc-800">
+							<b class="text-xl leading-none font-semibold text-amber-500 font-display">
+								<AnimatedNumber
+									value={currentReport.participantTimeline.currentActiveCount}
+									duration={700}
+								/>
+							</b>
+							<span class="text-xs uppercase tracking-widest text-zinc-600">
+								Active
+							</span>
+						</div>
 					</div>
 				</div>
-			</div>
-			<MiniAreaChart
-				labels={currentReport.participantTimeline.labels}
-				values={currentReport.participantTimeline.values}
-				overlayValues={currentReport.participantTimeline.activeValues}
-				lineColor="#0f766e"
-				fillColor="rgba(15, 118, 110, 0.14)"
-				overlayLineColor="#f59e0b"
-			/>
-		</article>
-	</section>
+				<MiniAreaChart
+					labels={currentReport.participantTimeline.labels}
+					values={currentReport.participantTimeline.values}
+					overlayValues={currentReport.participantTimeline.activeValues}
+					lineColor="#0f766e"
+					fillColor="rgba(15, 118, 110, 0.14)"
+					overlayLineColor="#f59e0b"
+				/>
+			</article>
+		</section>
 
-	<section class="chart-card">
-		<div class="chart-header">
-			<div>
-				<h2>{currentReport.messageBuckets.title}</h2>
-			</div>
-			<div class="period-switcher" aria-label="Message period selector">
-				<button
-					aria-pressed={selectedPeriod === 'week'}
-					class:period-toggle-active={selectedPeriod === 'week'}
-					class="period-toggle"
-					type="button"
-					onclick={() => selectPeriod('week')}
+		<section
+			class="surface-card p-5 sm:p-6"
+		>
+			<div class="mb-4 flex flex-wrap items-end justify-between gap-4">
+				<div>
+					<h2 class="mt-1 mb-0 text-2xl font-display sm:text-3xl">
+						{currentReport.messageBuckets.title}
+					</h2>
+				</div>
+				<div
+					class="inline-flex rounded-full border border-teal-700/12 bg-slate-900/5 p-1"
+					aria-label="Message period selector"
 				>
-					Weeks
-				</button>
-				<button
-					aria-pressed={selectedPeriod === 'day'}
-					class:period-toggle-active={selectedPeriod === 'day'}
-					class="period-toggle"
-					type="button"
-					onclick={() => selectPeriod('day')}
-				>
-					Days
-				</button>
+					<button
+						aria-pressed={selectedPeriod === 'week'}
+						class={`${periodButtonBaseClass} ${selectedPeriod === 'week' ? 'bg-teal-700 text-white shadow-lg' : 'text-zinc-700 hover:text-zinc-900'}`}
+						type="button"
+						onclick={() => selectPeriod('week')}
+					>
+						Weeks
+					</button>
+					<button
+						aria-pressed={selectedPeriod === 'day'}
+						class={`${periodButtonBaseClass} ${selectedPeriod === 'day' ? 'bg-teal-700 text-white shadow-lg' : 'text-zinc-700 hover:text-zinc-900'}`}
+						type="button"
+						onclick={() => selectPeriod('day')}
+					>
+						Days
+					</button>
+				</div>
 			</div>
-		</div>
 
-		<div class="chart-frame">
-			{#if currentReport.messageBuckets.labels.length > 0}
-				<canvas
-					bind:this={canvas}
-					aria-label={`${currentReport.messageBuckets.title} bar chart`}
-				></canvas>
-			{:else}
-				<p class="chart-empty">Not enough complete periods to draw this chart yet.</p>
-			{/if}
-		</div>
-	</section>
+			<div class="min-h-88 h-80 sm:h-96 lg:h-136">
+				{#if currentReport.messageBuckets.labels.length > 0}
+					<canvas
+						bind:this={canvas}
+						class="h-full w-full"
+						aria-label={`${currentReport.messageBuckets.title} bar chart`}
+					></canvas>
+				{:else}
+					<p
+						class="grid h-full place-items-center rounded-2xl border border-dashed border-teal-700/20 bg-white/40 p-6 text-center text-base text-zinc-600"
+					>
+						Not enough complete periods to draw this chart yet.
+					</p>
+				{/if}
+			</div>
+		</section>
+	</div>
 </div>
-
-<style>
-	:global(body) {
-		margin: 0;
-		font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
-		background:
-			radial-gradient(circle at top left, rgba(20, 184, 166, 0.16), transparent 34%),
-			linear-gradient(180deg, #f7f7f5 0%, #eef4f2 100%);
-		color: #18181b;
-	}
-
-	.page-shell {
-		max-width: 1120px;
-		margin: 0 auto;
-		padding: 3rem 1.5rem 4rem;
-	}
-
-	.hero {
-		display: block;
-		margin-bottom: 1.5rem;
-	}
-
-	.eyebrow,
-	.stat-card p {
-		margin: 0;
-		font-size: 0.875rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: #0f766e;
-	}
-
-	h1,
-	h2,
-	.stat-card strong {
-		font-family: 'Sora', 'Segoe UI', sans-serif;
-	}
-
-	h1 {
-		margin: 0.35rem 0 0.75rem;
-		font-size: clamp(2.3rem, 4vw, 4.75rem);
-		line-height: 0.95;
-	}
-
-	.lede {
-		max-width: 42rem;
-		margin: 0;
-		font-size: 1.05rem;
-		line-height: 1.6;
-		color: #3f3f46;
-	}
-
-	.chart-note {
-		margin: 0.85rem 0 0;
-		font-size: 0.92rem;
-		line-height: 1.5;
-		color: #52525b;
-	}
-
-	.stat-card,
-	.chart-card {
-		background: rgba(255, 255, 255, 0.82);
-		backdrop-filter: blur(14px);
-		border: 1px solid rgba(15, 118, 110, 0.12);
-		box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
-	}
-
-	.stats-grid {
-		display: grid;
-		grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
-		gap: 1rem;
-		margin-bottom: 1rem;
-	}
-
-	.stat-card {
-		padding: 1.25rem;
-		border-radius: 1.25rem;
-	}
-
-	.stat-card strong {
-		display: block;
-		margin-top: 0.45rem;
-		font-size: clamp(1.8rem, 3vw, 2.6rem);
-		line-height: 1;
-	}
-
-	.stat-subset {
-		margin-top: 0.9rem;
-		padding-top: 0.8rem;
-		border-top: 1px solid rgba(15, 118, 110, 0.12);
-		color: #52525b;
-	}
-
-	.stat-subset span {
-		display: block;
-		font-size: 0.82rem;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-	}
-
-	.stat-subset b {
-		display: block;
-		margin-top: 0.35rem;
-		font-family: 'Sora', 'Segoe UI', sans-serif;
-		font-size: 1.05rem;
-		font-weight: 600;
-		color: #27272a;
-	}
-
-	.participant-card {
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		gap: 1rem;
-	}
-
-	.participant-header {
-		display: block;
-	}
-
-	.participant-metrics {
-		display: flex;
-		justify-content: flex-start;
-		align-items: baseline;
-		gap: 0.9rem;
-		flex-wrap: nowrap;
-		width: fit-content;
-		max-width: 100%;
-	}
-
-	.participant-metric-row {
-		display: flex;
-		align-items: baseline;
-		gap: 0.45rem;
-		color: #27272a;
-		white-space: nowrap;
-	}
-
-	.participant-metric-row span {
-		font-size: 0.82rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: #52525b;
-	}
-
-	.participant-metric-row b,
-	.participant-metric-row strong {
-		font-family: 'Sora', 'Segoe UI', sans-serif;
-		font-size: 1.65rem;
-		font-weight: 600;
-		line-height: 1;
-	}
-
-	.participant-metric-row-primary strong {
-		color: #0f766e;
-	}
-
-	.participant-metric-row-secondary b {
-		font-size: 1.2rem;
-		color: #f59e0b;
-	}
-
-	.chart-card {
-		border-radius: 1.75rem;
-		padding: 1.5rem;
-	}
-
-	.chart-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: end;
-		gap: 1rem;
-		flex-wrap: wrap;
-		margin-bottom: 1rem;
-	}
-
-	.period-switcher {
-		display: inline-flex;
-		padding: 0.3rem;
-		border-radius: 999px;
-		background: rgba(15, 23, 42, 0.05);
-		border: 1px solid rgba(15, 118, 110, 0.12);
-	}
-
-	.period-toggle {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.55rem 0.95rem;
-		border: 0;
-		border-radius: 999px;
-		background: transparent;
-		cursor: pointer;
-		font-size: 0.88rem;
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: #3f3f46;
-		text-decoration: none;
-		transition:
-			background-color 160ms ease,
-			color 160ms ease,
-			box-shadow 160ms ease;
-	}
-
-	.period-toggle:hover {
-		color: #18181b;
-	}
-
-	.period-toggle-active {
-		background: #0f766e;
-		color: white;
-		box-shadow: 0 10px 24px rgba(15, 118, 110, 0.2);
-	}
-
-	h2 {
-		margin: 0.25rem 0 0;
-		font-size: clamp(1.5rem, 2vw, 2.25rem);
-	}
-
-	.chart-frame {
-		height: min(60vh, 34rem);
-		min-height: 22rem;
-	}
-
-	.chart-empty {
-		display: grid;
-		place-items: center;
-		height: 100%;
-		margin: 0;
-		border-radius: 1.25rem;
-		border: 1px dashed rgba(15, 118, 110, 0.18);
-		background: rgba(255, 255, 255, 0.38);
-		color: #52525b;
-		font-size: 0.98rem;
-		text-align: center;
-		padding: 1.5rem;
-	}
-
-	@media (max-width: 860px) {
-		.page-shell {
-			padding: 1.5rem 1rem 3rem;
-		}
-
-		.stats-grid {
-			grid-template-columns: 1fr;
-		}
-
-		.participant-metrics {
-			flex-wrap: wrap;
-		}
-	}
-</style>
