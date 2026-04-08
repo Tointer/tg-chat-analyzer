@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { AppTheme } from '$lib';
-	import MessageBucketsChart from '$lib/MessageBucketsChart.svelte';
-	import MessagePeriodToggle from '$lib/MessagePeriodToggle.svelte';
+	import MessageBucketsChart from './MessageBucketsChart.svelte';
+	import MessagePeriodToggle from './MessagePeriodToggle.svelte';
 	import type { TelegramAnalysisReport } from '$lib/telegram-analysis';
 
 	type PeriodKey = 'day' | 'week';

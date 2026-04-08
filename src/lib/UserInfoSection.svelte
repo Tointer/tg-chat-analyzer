@@ -1,7 +1,8 @@
 <script lang="ts">
-	import MessageBucketsChart from '$lib/MessageBucketsChart.svelte';
-	import MessagePeriodToggle from '$lib/MessagePeriodToggle.svelte';
-	import SegmentedSelector from '$lib/SegmentedSelector.svelte';
+	import MessageBucketsChart from './MessageBucketsChart.svelte';
+	import MessagePeriodToggle from './MessagePeriodToggle.svelte';
+	import RankedListItem from './RankedListItem.svelte';
+	import SegmentedSelector from './SegmentedSelector.svelte';
 	import type { AppTheme } from '$lib';
 	import type { MessageBucketsChart as MessageBucketsChartData } from '$lib/telegram-analysis';
 
@@ -150,9 +151,9 @@
 	});
 
 	$effect(() => {
-		users;
-		selectedMetric;
-		selectedUserId;
+		void users;
+		void selectedMetric;
+		void selectedUserId;
 		queueMicrotask(() => {
 			updateScrollFades();
 		});
@@ -160,7 +161,7 @@
 </script>
 
 <section
-	class="surface-card mt-4 flex min-h-[32.5rem] flex-col overflow-hidden p-5 sm:min-h-[38rem] sm:p-6 lg:h-[43rem]"
+	class="surface-card mt-4 flex min-h-130 flex-col overflow-hidden p-5 sm:min-h-152 sm:p-6 lg:h-172"
 	aria-label="User information"
 >
 	<div class="mb-4 shrink-0">
@@ -187,34 +188,31 @@
 	<div class="grid min-h-0 flex-1 auto-rows-fr gap-4 lg:grid-cols-3 lg:gap-6">
 		<div class="flex min-h-0 flex-col rounded-3xl border border-app-border bg-app-surface-alt p-3 lg:min-h-0">
 			<div class="relative min-h-0 flex-1 overflow-hidden rounded-2xl">
-				<div class={`pointer-events-none absolute inset-x-0 top-0 z-10 h-8 bg-gradient-to-b from-app-surface-alt to-transparent transition-opacity duration-200 ${showTopFade ? 'opacity-100' : 'opacity-0'}`}></div>
-				<div class={`pointer-events-none absolute inset-x-0 bottom-0 z-10 h-8 bg-gradient-to-t from-app-surface-alt to-transparent transition-opacity duration-200 ${showBottomFade ? 'opacity-100' : 'opacity-0'}`}></div>
+				<div class={`pointer-events-none absolute inset-x-0 top-0 z-10 h-8 bg-linear-to-b from-app-surface-alt to-transparent transition-opacity duration-200 ${showTopFade ? 'opacity-100' : 'opacity-0'}`}></div>
+				<div class={`pointer-events-none absolute inset-x-0 bottom-0 z-10 h-8 bg-linear-to-t from-app-surface-alt to-transparent transition-opacity duration-200 ${showBottomFade ? 'opacity-100' : 'opacity-0'}`}></div>
 				<div
 					bind:this={scrollViewport}
 					class="user-list-scroll min-h-0 h-full overflow-y-auto pr-1"
 					onscroll={updateScrollFades}
 				>
 				<div class="space-y-2">
-					{#each sortedUsers as user, index}
-						<button
-							type="button"
-							class={`flex w-full items-stretch gap-3 rounded-2xl pr-4 text-left transition-colors ${selectedUser?.userId === user.userId ? 'bg-app-accent-strong text-app-accent-contrast shadow-app-button' : 'bg-app-surface hover:bg-app-empty text-app-text'}`}
-							onclick={() => onSelectUser(user.userId)}
+					{#each sortedUsers as user, index (user.userId)}
+						<RankedListItem
+							rank={index + 1}
+							interactive
+							selected={selectedUser?.userId === user.userId}
+							onClick={() => onSelectUser(user.userId)}
+							contentClass="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 pl-0"
 						>
-							<span class={`flex min-w-14 shrink-0 items-center justify-center rounded-l-2xl px-3 text-xl font-display ${selectedUser?.userId === user.userId ? 'bg-app-accent-contrast/18 text-app-accent-contrast' : 'bg-app-surface-strong text-app-text'}`}>
-								{index + 1}
-							</span>
-							<span class="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 pl-0">
-								<span class="min-w-0 pr-3">
+							<span class="min-w-0 pr-3">
 								<span class="block truncate text-sm font-semibold sm:text-base">{user.userName}</span>
 							</span>
-								<strong class="shrink-0 text-lg font-display">
-									{selectedMetric === 'favorites'
-										? numberFormatter.format(user.favorites.leaderboardValue)
-										: numberFormatter.format(user.metrics[selectedMetric].totalValue)}
-								</strong>
-							</span>
-						</button>
+							<strong class="shrink-0 text-lg font-display">
+								{selectedMetric === 'favorites'
+									? numberFormatter.format(user.favorites.leaderboardValue)
+									: numberFormatter.format(user.metrics[selectedMetric].totalValue)}
+							</strong>
+						</RankedListItem>
 					{/each}
 				</div>
 				</div>
@@ -251,14 +249,16 @@
 				</div>
 
 				{#if isFavoriteView}
-					<div class="min-h-0 flex-1 overflow-y-auto pr-1">
+					<div class="user-list-scroll min-h-0 flex-1 overflow-y-auto pr-1">
 						{#if selectedFavorites.length > 0}
 							<div class="space-y-3">
-								{#each selectedFavorites as favorite, index}
-									<article class="rounded-2xl border border-app-border bg-app-surface p-4 shadow-sm">
+								{#each selectedFavorites as favorite, index (favorite.targetUserId)}
+									<RankedListItem
+										rank={index + 1}
+										contentClass="min-w-0 flex-1 p-4"
+									>
 										<div class="flex flex-wrap items-start justify-between gap-3">
 											<div class="flex min-w-0 items-start gap-3">
-												<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-app-surface-strong text-base font-display text-app-text">{index + 1}</span>
 												<div class="min-w-0">
 													<h4 class="m-0 truncate text-base font-semibold text-app-text sm:text-lg">{favorite.targetUserName}</h4>
 													<p class="mt-1 text-sm text-app-muted">
@@ -285,7 +285,7 @@
 												<strong class="mt-1 block text-base font-display text-app-text">{numberFormatter.format(favorite.overlapReplyCount)}</strong>
 											</div>
 										</div>
-									</article>
+									</RankedListItem>
 								{/each}
 							</div>
 						{:else}
