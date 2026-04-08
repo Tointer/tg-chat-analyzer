@@ -8,6 +8,7 @@ import {
 	type TelegramExport
 } from '$lib/telegram-analysis';
 import { getTelegramUserMetricBuckets } from '$lib/telegram-user-message-buckets';
+import { getTelegramUserReplyFavoritesSummary } from '$lib/telegram-user-reply-favorites';
 import { getTelegramUserStats } from '$lib/telegram-user-stats';
 import type { TimeBucketSpec, TimeRangeSpec } from '$lib/telegram-analysis';
 import type { PageServerLoad } from './$types';
@@ -34,6 +35,22 @@ type UserInfoCardItem = {
 			messageBucketsByPeriod: Record<'day' | 'week', MessageBucketsChart>;
 		}
 	>;
+	favorites: {
+		label: string;
+		leaderboardValue: number;
+		leaderboardValueLabel: string;
+		entries: Array<{
+			targetUserId: string;
+			targetUserName: string;
+			observedReplies: number;
+			expectedReplies: number;
+			residual: number;
+			favoriteScore: number;
+			overlapMessageCount: number;
+			overlapTargetMessageCount: number;
+			overlapReplyCount: number;
+		}>;
+	};
 };
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -45,52 +62,62 @@ export const load: PageServerLoad = async ({ url }) => {
 		startTimestamp: analyticsIndex.stats.dateRange.start ?? undefined,
 		endTimestamp: analyticsIndex.stats.dateRange.end ?? undefined
 	};
-	const userInfoCards: UserInfoCardItem[] = getTelegramUserStats(analyticsIndex).map((user) => ({
-		userId: user.userId,
-		userName: user.userName,
-		metrics: {
-			messages: {
-				label: 'Message count',
-				totalValue: user.totalMessages,
-				messageBucketsByPeriod: {
-					day: getTelegramUserMetricBuckets(
-						analyticsIndex,
-						user.userId,
-						MESSAGE_BUCKETS.day,
-						fullHistoryRange,
-						'messages'
-					),
-					week: getTelegramUserMetricBuckets(
-						analyticsIndex,
-						user.userId,
-						MESSAGE_BUCKETS.week,
-						fullHistoryRange,
-						'messages'
-					)
+	const userInfoCards: UserInfoCardItem[] = getTelegramUserStats(analyticsIndex).map((user) => {
+		const favoriteSummary = getTelegramUserReplyFavoritesSummary(analyticsIndex, user.userId);
+
+		return {
+			userId: user.userId,
+			userName: user.userName,
+			metrics: {
+				messages: {
+					label: 'Message count',
+					totalValue: user.totalMessages,
+					messageBucketsByPeriod: {
+						day: getTelegramUserMetricBuckets(
+							analyticsIndex,
+							user.userId,
+							MESSAGE_BUCKETS.day,
+							fullHistoryRange,
+							'messages'
+						),
+						week: getTelegramUserMetricBuckets(
+							analyticsIndex,
+							user.userId,
+							MESSAGE_BUCKETS.week,
+							fullHistoryRange,
+							'messages'
+						)
+					}
+				},
+				characters: {
+					label: 'Characters count',
+					totalValue: user.totalTextLength,
+					messageBucketsByPeriod: {
+						day: getTelegramUserMetricBuckets(
+							analyticsIndex,
+							user.userId,
+							MESSAGE_BUCKETS.day,
+							fullHistoryRange,
+							'characters'
+						),
+						week: getTelegramUserMetricBuckets(
+							analyticsIndex,
+							user.userId,
+							MESSAGE_BUCKETS.week,
+							fullHistoryRange,
+							'characters'
+						)
+					}
 				}
 			},
-			characters: {
-				label: 'Characters count',
-				totalValue: user.totalTextLength,
-				messageBucketsByPeriod: {
-					day: getTelegramUserMetricBuckets(
-						analyticsIndex,
-						user.userId,
-						MESSAGE_BUCKETS.day,
-						fullHistoryRange,
-						'characters'
-					),
-					week: getTelegramUserMetricBuckets(
-						analyticsIndex,
-						user.userId,
-						MESSAGE_BUCKETS.week,
-						fullHistoryRange,
-						'characters'
-					)
-				}
+			favorites: {
+				label: 'Reply favorites',
+				leaderboardValue: favoriteSummary.repliesSent,
+				leaderboardValueLabel: 'Replies sent',
+				entries: favoriteSummary.favorites
 			}
-		}
-	}));
+		};
+	});
 	const requestedPeriod = url.searchParams.get('period');
 	const selectedPeriod = requestedPeriod === 'day' ? 'day' : 'week';
 

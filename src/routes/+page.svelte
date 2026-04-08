@@ -14,6 +14,7 @@
 
 	type PeriodKey = 'day' | 'week';
 	type UserMetricKey = 'messages' | 'characters';
+	type UserInfoViewKey = UserMetricKey | 'favorites';
 
 	type PageData = {
 		selectedPeriod: 'day' | 'week';
@@ -29,6 +30,22 @@
 					messageBucketsByPeriod: Record<PeriodKey, MessageBucketsChart>;
 				}
 			>;
+			favorites: {
+				label: string;
+				leaderboardValue: number;
+				leaderboardValueLabel: string;
+				entries: Array<{
+					targetUserId: string;
+					targetUserName: string;
+					observedReplies: number;
+					expectedReplies: number;
+					residual: number;
+					favoriteScore: number;
+					overlapMessageCount: number;
+					overlapTargetMessageCount: number;
+					overlapReplyCount: number;
+				}>;
+			};
 		}>;
 	};
 
@@ -36,7 +53,7 @@
 	let selectedPeriod = $state<PeriodKey>('week');
 	let selectedUserId = $state<string | null>(null);
 	let selectedUserPeriod = $state<PeriodKey>('week');
-	let selectedUserMetric = $state<UserMetricKey>('messages');
+	let selectedUserMetric = $state<UserInfoViewKey>('messages');
 
 	const currentReport = $derived(data.periodReports[selectedPeriod]);
 	const themeName = fromStore(activeThemeName);
@@ -57,7 +74,7 @@
 		selectedUserPeriod = period;
 	}
 
-	function selectUserMetric(metric: UserMetricKey) {
+	function selectUserMetric(metric: UserInfoViewKey) {
 		selectedUserMetric = metric;
 	}
 

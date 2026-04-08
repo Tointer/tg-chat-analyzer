@@ -16,6 +16,10 @@ export {
 } from './telegram-membership-index';
 export { getTelegramReplyPairStats, getTelegramReplyPairStatsByUsers } from './telegram-reply-pair-stats';
 export { getTelegramUserMessageBuckets, getTelegramUserMetricBuckets } from './telegram-user-message-buckets';
+export {
+	getTelegramUserReplyFavorites,
+	getTelegramUserReplyFavoritesSummary
+} from './telegram-user-reply-favorites';
 export { getTelegramUserStats, getTelegramUserStatsById } from './telegram-user-stats';
 export {
 	activeThemeName,
@@ -31,4 +35,8 @@ export {
 export type { AppTheme, AppThemeName } from './themes';
 export type { MembershipInterval } from './telegram-membership-index';
 export type { TelegramReplyPairStats } from './telegram-reply-pair-stats';
+export type {
+	TelegramUserReplyFavorite,
+	TelegramUserReplyFavoritesSummary
+} from './telegram-user-reply-favorites';
 export type { TelegramUserStats } from './telegram-user-stats';
