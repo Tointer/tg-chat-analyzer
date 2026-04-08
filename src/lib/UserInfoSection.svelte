@@ -160,7 +160,7 @@
 </script>
 
 <section
-	class="surface-card mt-4 flex max-h-[calc(100vh-2rem)] flex-col overflow-hidden p-5 sm:p-6"
+	class="surface-card mt-4 flex min-h-[32.5rem] flex-col overflow-hidden p-5 sm:min-h-[38rem] sm:p-6 lg:h-[43rem]"
 	aria-label="User information"
 >
 	<div class="mb-4 shrink-0">
