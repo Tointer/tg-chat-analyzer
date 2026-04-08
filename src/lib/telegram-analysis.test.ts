@@ -17,15 +17,15 @@ function createMessage(overrides: Partial<TelegramExportMessage> = {}): Telegram
 }
 
 describe('classifyTelegramMessage', () => {
-	test('classifies regular text messages as text', () => {
-		assert.equal(classifyTelegramMessage(createMessage({ text: 'hello world' })), 'text');
+	test('classifies regular text messages as other', () => {
+		assert.equal(classifyTelegramMessage(createMessage({ text: 'hello world' })), 'other');
 	});
 
 	test('classifies photo-only messages as media-only', () => {
 		assert.equal(classifyTelegramMessage(createMessage({ photo: 'photo.jpg' })), 'media-only');
 	});
 
-	test('classifies sticker-only messages as media-only', () => {
+	test('classifies sticker-only messages as low-info', () => {
 		assert.equal(
 			classifyTelegramMessage(
 				createMessage({
@@ -35,15 +35,15 @@ describe('classifyTelegramMessage', () => {
 					mime_type: 'image/webp'
 				})
 			),
-			'media-only'
+			'low-info'
 		);
 	});
 
-	test('classifies plain emoji-only messages as media-only', () => {
-		assert.equal(classifyTelegramMessage(createMessage({ text: '😇🔥' })), 'media-only');
+	test('classifies plain emoji-only messages as low-info', () => {
+		assert.equal(classifyTelegramMessage(createMessage({ text: '😇🔥' })), 'low-info');
 	});
 
-	test('classifies custom emoji-only messages as media-only', () => {
+	test('classifies custom emoji-only messages as low-info', () => {
 		assert.equal(
 			classifyTelegramMessage(
 				createMessage({
@@ -57,18 +57,24 @@ describe('classifyTelegramMessage', () => {
 					]
 				})
 			),
-			'media-only'
+			'low-info'
 		);
 	});
 
-	test('keeps text with emoji as text', () => {
-		assert.equal(classifyTelegramMessage(createMessage({ text: 'hello 😇' })), 'text');
+	test('classifies short low-signal text as low-info', () => {
+		assert.equal(classifyTelegramMessage(createMessage({ text: 'ahahahaha' })), 'low-info');
+		assert.equal(classifyTelegramMessage(createMessage({ text: 'ok' })), 'low-info');
+		assert.equal(classifyTelegramMessage(createMessage({ text: 'nvm' })), 'low-info');
 	});
 
-	test('keeps captioned media as text', () => {
+	test('keeps text with emoji as other', () => {
+		assert.equal(classifyTelegramMessage(createMessage({ text: 'hello 😇' })), 'other');
+	});
+
+	test('keeps captioned media as other when the text is substantive', () => {
 		assert.equal(
 			classifyTelegramMessage(createMessage({ photo: 'photo.jpg', text: 'look at this' })),
-			'text'
+			'other'
 		);
 	});
 
@@ -113,11 +119,13 @@ describe('analyzeTelegramExport', () => {
 			'Day 2025-12-15',
 			'Day 2025-12-16'
 		]);
-		assert.deepEqual(report.messageBuckets.textValues, [1, 0, 1]);
-		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 2, 0]);
+		assert.deepEqual(report.messageBuckets.otherValues, [1, 0, 1]);
+		assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 1, 0]);
+		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 1, 0]);
 		assert.equal(report.totalMessages, 6);
-		assert.equal(report.textMessages, 4);
-		assert.equal(report.mediaOnlyMessages, 2);
+		assert.equal(report.otherMessages, 4);
+		assert.equal(report.lowInfoMessages, 1);
+		assert.equal(report.mediaOnlyMessages, 1);
 		assert.equal(report.bucketCount, 3);
 		assert.deepEqual(report.busiestBucket, {
 			label: '2025-12-15',
@@ -154,7 +162,8 @@ describe('analyzeTelegramExport', () => {
 			'3 days: 2025-12-14 to 2025-12-16',
 			'3 days: 2025-12-17 to 2025-12-19'
 		]);
-		assert.deepEqual(report.messageBuckets.textValues, [2, 1]);
+		assert.deepEqual(report.messageBuckets.otherValues, [0, 0]);
+		assert.deepEqual(report.messageBuckets.lowInfoValues, [2, 1]);
 		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [1, 0]);
 		assert.deepEqual(report.range, { start: '2025-12-14', end: '2025-12-19' });
 	});
@@ -186,7 +195,8 @@ describe('analyzeTelegramExport', () => {
 			'Month 2026-01',
 			'Month 2026-02'
 		]);
-		assert.deepEqual(report.messageBuckets.textValues, [1, 1, 1]);
+		assert.deepEqual(report.messageBuckets.otherValues, [0, 0, 0]);
+		assert.deepEqual(report.messageBuckets.lowInfoValues, [1, 1, 1]);
 		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [1, 0, 0]);
 		assert.deepEqual(report.range, { start: '2025-12-01', end: '2026-02-28' });
 	});
@@ -218,9 +228,46 @@ describe('analyzeTelegramExport', () => {
 			'Week of 2025-12-15',
 			'Week of 2025-12-22'
 		]);
-		assert.deepEqual(report.messageBuckets.textValues, [1, 1, 1]);
+		assert.deepEqual(report.messageBuckets.otherValues, [0, 0, 0]);
+		assert.deepEqual(report.messageBuckets.lowInfoValues, [1, 1, 1]);
 		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [1, 0, 0]);
 		assert.deepEqual(report.range, { start: '2025-12-08', end: '2025-12-28' });
+	});
+
+	test('separates low-info, media-only, and other messages in chart buckets', () => {
+		const report = analyzeTelegramExport({
+			name: 'Mixed chart chat',
+			messages: [
+				createMessage({ date: '2025-12-13T09:00:00', date_unixtime: '1765616400', text: 'edge start' }),
+				createMessage({
+					date: '2025-12-14T09:00:00',
+					date_unixtime: '1765702800',
+					photo: 'photo.jpg'
+				}),
+				createMessage({
+					date: '2025-12-14T10:00:00',
+					date_unixtime: '1765706400',
+					forwarded_from: 'Source',
+					forwarded_from_id: 'channel1',
+					text: 'forwarded'
+				}),
+				createMessage({ date: '2025-12-14T11:00:00', date_unixtime: '1765710000', text: 'ok' }),
+				createMessage({
+					date: '2025-12-14T12:00:00',
+					date_unixtime: '1765713600',
+					text: 'this one has real content'
+				}),
+				createMessage({ date: '2025-12-15T09:00:00', date_unixtime: '1765789200', text: 'edge end' })
+			]
+		});
+
+		assert.deepEqual(report.messageBuckets.labels, ['2025-12-14']);
+		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [1]);
+		assert.deepEqual(report.messageBuckets.lowInfoValues, [1]);
+		assert.deepEqual(report.messageBuckets.otherValues, [2]);
+		assert.equal(report.mediaOnlyMessages, 1);
+		assert.equal(report.lowInfoMessages, 1);
+		assert.equal(report.otherMessages, 4);
 	});
 
 	test('builds participant timeline from membership events', () => {

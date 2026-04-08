@@ -10,8 +10,10 @@ export type AppTheme = {
 	chart: {
 		mediaBar: string;
 		mediaBarHover: string;
-		textBar: string;
-		textBarHover: string;
+		lowInfoBar: string;
+		lowInfoBarHover: string;
+		otherBar: string;
+		otherBarHover: string;
 		legendText: string;
 		axisText: string;
 		grid: string;
@@ -36,8 +38,10 @@ export const appThemes = {
 		chart: {
 			mediaBar: '#84cc16',
 			mediaBarHover: '#a3e635',
-			textBar: '#f97316',
-			textBarHover: '#fb923c',
+			lowInfoBar: '#c084fc',
+			lowInfoBarHover: '#d8b4fe',
+			otherBar: '#f97316',
+			otherBarHover: '#fb923c',
 			legendText: '#f6ede2',
 			axisText: '#cbb8a5',
 			grid: 'rgba(203, 184, 165, 0.12)',
@@ -60,8 +64,10 @@ export const appThemes = {
 		chart: {
 			mediaBar: '#f59e0b',
 			mediaBarHover: '#d97706',
-			textBar: '#0f766e',
-			textBarHover: '#115e59',
+			lowInfoBar: '#a855f7',
+			lowInfoBarHover: '#c084fc',
+			otherBar: '#0f766e',
+			otherBarHover: '#115e59',
 			legendText: '#27272a',
 			axisText: '#3f3f46',
 			grid: 'rgba(15, 23, 42, 0.08)',

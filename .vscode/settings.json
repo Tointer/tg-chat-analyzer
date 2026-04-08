@@ -6,6 +6,10 @@
 		"/^bun run check$/": {
 			"approve": true,
 			"matchCommandLine": true
+		},
+		"/^bun test$/": {
+			"approve": true,
+			"matchCommandLine": true
 		}
 	}
 }

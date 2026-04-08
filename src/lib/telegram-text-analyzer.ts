@@ -16,6 +16,7 @@ import type {
 const EMOJI_TEXT_DETECTION = /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u;
 const NON_EMOJI_TEXT_REMAINDER =
 	/(?:\p{White_Space}|\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Component}|\u200D|\uFE0F|\u20E3)/gu;
+const WHITESPACE = /\s/u;
 
 function extractTextContent(message: TelegramExportMessage): string {
 	if (typeof message.text === 'string') {
@@ -83,6 +84,26 @@ function isSupportedMediaOnlyMessage(message: TelegramExportMessage): boolean {
 	return false;
 }
 
+function isStickerOnlyMessage(message: TelegramExportMessage): boolean {
+	if (message.sticker_emoji) {
+		return true;
+	}
+
+	return message.media_type?.toLowerCase() === 'sticker';
+}
+
+function isLowInfoTextContent(textContent: string): boolean {
+	const normalizedCharacters = [...textContent.toLowerCase()].filter(
+		(character) => !WHITESPACE.test(character)
+	);
+
+	if (normalizedCharacters.length === 0) {
+		return false;
+	}
+
+	return new Set(normalizedCharacters).size <= 3;
+}
+
 export function classifyTelegramMessage(message: TelegramExportMessage): MessageClassification {
 	if (message.type !== 'message') {
 		return 'ignore';
@@ -95,14 +116,22 @@ export function classifyTelegramMessage(message: TelegramExportMessage): Message
 	const textContent = extractTextContent(message);
 
 	if (textContent.length === 0) {
+		if (isStickerOnlyMessage(message)) {
+			return 'low-info';
+		}
+
 		return isSupportedMediaOnlyMessage(message) ? 'media-only' : 'ignore';
 	}
 
 	if (isEmojiOnlyMessage(message, textContent)) {
-		return 'media-only';
+		return 'low-info';
 	}
 
-	return 'text';
+	if (isLowInfoTextContent(textContent)) {
+		return 'low-info';
+	}
+
+	return 'other';
 }
 
 export function aggregateMessagesByTimeBucket(
@@ -114,7 +143,8 @@ export function aggregateMessagesByTimeBucket(
 		string,
 		{
 			start: Date;
-			textCount: number;
+			otherCount: number;
+			lowInfoCount: number;
 			mediaOnlyCount: number;
 		}
 	>();
@@ -131,14 +161,17 @@ export function aggregateMessagesByTimeBucket(
 		const key = bucketStart.toISOString();
 		const bucketCounts = counts.get(key) ?? {
 			start: bucketStart,
-			textCount: 0,
+			otherCount: 0,
+			lowInfoCount: 0,
 			mediaOnlyCount: 0
 		};
 
 		if (classification === 'media-only') {
 			bucketCounts.mediaOnlyCount += 1;
+		} else if (classification === 'low-info') {
+			bucketCounts.lowInfoCount += 1;
 		} else {
-			bucketCounts.textCount += 1;
+			bucketCounts.otherCount += 1;
 		}
 
 		counts.set(key, bucketCounts);
@@ -154,7 +187,8 @@ export function aggregateMessagesByTimeBucket(
 				tooltipLabel: getTimeBucketTooltipLabel(count.start, normalizedBucket),
 				start: range.start,
 				end: range.end,
-				textCount: count.textCount,
+				otherCount: count.otherCount,
+				lowInfoCount: count.lowInfoCount,
 				mediaOnlyCount: count.mediaOnlyCount
 			};
 		});

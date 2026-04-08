@@ -10,6 +10,8 @@ export type TelegramExportMessage = {
 	type?: string;
 	date?: string;
 	date_unixtime?: string;
+	forwarded_from?: string;
+	forwarded_from_id?: string;
 	action?: string;
 	actor?: string;
 	actor_id?: string;
@@ -47,7 +49,8 @@ export type MessageBucketAggregate = {
 	tooltipLabel: string;
 	start: string;
 	end: string;
-	textCount: number;
+	otherCount: number;
+	lowInfoCount: number;
 	mediaOnlyCount: number;
 };
 
@@ -72,11 +75,13 @@ export type TelegramAnalysisReport = {
 		trimmedEdgeBucketCount: number;
 		labels: string[];
 		tooltipLabels: string[];
-		textValues: number[];
+		otherValues: number[];
+		lowInfoValues: number[];
 		mediaOnlyValues: number[];
 	};
 	totalMessages: number;
-	textMessages: number;
+	otherMessages: number;
+	lowInfoMessages: number;
 	mediaOnlyMessages: number;
 	bucketCount: number;
 	busiestBucket: {
@@ -90,4 +95,4 @@ export type TelegramAnalysisReport = {
 	};
 };
 
-export type MessageClassification = 'text' | 'media-only' | 'ignore';
+export type MessageClassification = 'other' | 'low-info' | 'media-only' | 'ignore';

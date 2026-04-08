@@ -34,17 +34,19 @@ export function analyzeTelegramExport(
 	const visibleMessageBuckets =
 		aggregatedMessageBuckets.length > 2 ? aggregatedMessageBuckets.slice(1, -1) : [];
 	const totalMessages = aggregatedMessageBuckets.reduce(
-		(sum, entry) => sum + entry.textCount + entry.mediaOnlyCount,
+		(sum, entry) => sum + entry.otherCount + entry.lowInfoCount + entry.mediaOnlyCount,
 		0
 	);
-	const textMessages = aggregatedMessageBuckets.reduce((sum, entry) => sum + entry.textCount, 0);
+	const otherMessages = aggregatedMessageBuckets.reduce((sum, entry) => sum + entry.otherCount, 0);
+	const lowInfoMessages = aggregatedMessageBuckets.reduce((sum, entry) => sum + entry.lowInfoCount, 0);
 	const mediaOnlyMessages = aggregatedMessageBuckets.reduce(
 		(sum, entry) => sum + entry.mediaOnlyCount,
 		0
 	);
 	const busiestBucket = visibleMessageBuckets.reduce(
 		(current, entry) =>
-			entry.textCount + entry.mediaOnlyCount > current.textCount + current.mediaOnlyCount
+			entry.otherCount + entry.lowInfoCount + entry.mediaOnlyCount >
+			current.otherCount + current.lowInfoCount + current.mediaOnlyCount
 				? entry
 				: current,
 		visibleMessageBuckets[0] ?? {
@@ -52,7 +54,8 @@ export function analyzeTelegramExport(
 			tooltipLabel: 'N/A',
 			start: 'N/A',
 			end: 'N/A',
-			textCount: 0,
+			otherCount: 0,
+			lowInfoCount: 0,
 			mediaOnlyCount: 0
 		}
 	);
@@ -68,17 +71,19 @@ export function analyzeTelegramExport(
 				aggregatedMessageBuckets.length >= 2 ? Math.min(2, aggregatedMessageBuckets.length) : 0,
 			labels: visibleMessageBuckets.map((entry) => entry.label),
 			tooltipLabels: visibleMessageBuckets.map((entry) => entry.tooltipLabel),
-			textValues: visibleMessageBuckets.map((entry) => entry.textCount),
+			otherValues: visibleMessageBuckets.map((entry) => entry.otherCount),
+			lowInfoValues: visibleMessageBuckets.map((entry) => entry.lowInfoCount),
 			mediaOnlyValues: visibleMessageBuckets.map((entry) => entry.mediaOnlyCount)
 		},
 		totalMessages,
-		textMessages,
+		otherMessages,
+		lowInfoMessages,
 		mediaOnlyMessages,
 		bucketCount: visibleMessageBuckets.length,
 		busiestBucket: {
 			label: busiestBucket.label,
 			tooltipLabel: busiestBucket.tooltipLabel,
-			count: busiestBucket.textCount + busiestBucket.mediaOnlyCount
+			count: busiestBucket.otherCount + busiestBucket.lowInfoCount + busiestBucket.mediaOnlyCount
 		},
 		range: {
 			start: visibleMessageBuckets[0]?.start ?? 'N/A',
