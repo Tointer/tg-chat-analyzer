@@ -7,15 +7,77 @@
 	--font-display: 'Sora', 'Segoe UI', sans-serif;
 }
 
+@theme inline {
+	--color-app-bg: var(--app-bg);
+	--color-app-text: var(--app-text);
+	--color-app-muted: var(--app-muted);
+	--color-app-subtle: var(--app-subtle);
+	--color-app-accent: var(--app-accent);
+	--color-app-accent-strong: var(--app-accent-strong);
+	--color-app-accent-contrast: var(--app-accent-contrast);
+	--color-app-highlight: var(--app-highlight);
+	--color-app-surface: var(--app-surface);
+	--color-app-surface-alt: var(--app-surface-alt);
+	--color-app-border: var(--app-border);
+	--color-app-empty: var(--app-empty);
+	--shadow-app-card: var(--app-card-shadow);
+	--shadow-app-button: var(--app-button-shadow);
+}
+
 @layer base {
 	body {
-		@apply m-0 bg-stone-50 font-sans text-zinc-900;
-		background-image:
-			radial-gradient(circle at top left, rgba(20, 184, 166, 0.16), transparent 34%),
-			linear-gradient(180deg, #f7f7f5 0%, #eef4f2 100%);
+		@apply m-0 font-sans;
 	}
 }
 
+.theme-root {
+	@apply min-h-screen bg-app-bg font-sans text-app-text;
+	background-image: var(--app-bg-image);
+	color-scheme: var(--app-color-scheme);
+}
+
+.theme-midnight {
+	--app-bg: #120d0a;
+	--app-text: #f6ede2;
+	--app-muted: #cbb8a5;
+	--app-subtle: #917b67;
+	--app-accent: #fb923c;
+	--app-accent-strong: #ea580c;
+	--app-accent-contrast: #fff7ed;
+	--app-highlight: #fbbf24;
+	--app-surface: rgba(28, 21, 16, 0.82);
+	--app-surface-alt: rgba(52, 38, 29, 0.56);
+	--app-border: rgba(251, 146, 60, 0.2);
+	--app-empty: rgba(28, 21, 16, 0.48);
+	--app-card-shadow: 0 24px 60px rgba(10, 6, 4, 0.5);
+	--app-button-shadow: 0 10px 24px rgba(234, 88, 12, 0.28);
+	--app-bg-image:
+		radial-gradient(circle at top left, rgba(251, 146, 60, 0.14), transparent 28%),
+		linear-gradient(180deg, #221812 0%, #120d0a 100%);
+	--app-color-scheme: dark;
+}
+
+.theme-dawn {
+	--app-bg: #f7f7f5;
+	--app-text: #18181b;
+	--app-muted: #3f3f46;
+	--app-subtle: #52525b;
+	--app-accent: #0f766e;
+	--app-accent-strong: #0f766e;
+	--app-accent-contrast: #ffffff;
+	--app-highlight: #f59e0b;
+	--app-surface: rgba(255, 255, 255, 0.82);
+	--app-surface-alt: rgba(15, 23, 42, 0.05);
+	--app-border: rgba(15, 118, 110, 0.12);
+	--app-empty: rgba(255, 255, 255, 0.4);
+	--app-card-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+	--app-button-shadow: 0 10px 24px rgba(15, 118, 110, 0.2);
+	--app-bg-image:
+		radial-gradient(circle at top left, rgba(20, 184, 166, 0.16), transparent 34%),
+		linear-gradient(180deg, #f7f7f5 0%, #eef4f2 100%);
+	--app-color-scheme: light;
+}
+
 @utility surface-card {
-	@apply rounded-3xl border border-teal-700/12 bg-white/80 shadow-2xl backdrop-blur-md;
+	@apply rounded-3xl border border-app-border bg-app-surface shadow-app-card backdrop-blur-md;
 }
