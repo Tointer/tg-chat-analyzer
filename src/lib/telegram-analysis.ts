@@ -10,6 +10,12 @@ export type TelegramExportMessage = {
 	type?: string;
 	date?: string;
 	date_unixtime?: string;
+	action?: string;
+	actor?: string;
+	actor_id?: string;
+	from?: string;
+	from_id?: string;
+	members?: string[];
 	text?: string | TelegramTextPart[];
 	text_entities?: TelegramTextEntity[];
 	photo?: string;
@@ -33,6 +39,14 @@ type WeeklyAggregate = {
 
 export type WeeklyChartData = {
 	chatName: string;
+	participantTimeline: {
+		labels: string[];
+		values: number[];
+		activeValues: number[];
+		currentCount: number;
+		currentActiveCount: number;
+		peakCount: number;
+	};
 	weeklyMessages: {
 		labels: string[];
 		textValues: number[];
@@ -67,6 +81,14 @@ function getWeekStart(date: Date): Date {
 
 function formatWeekLabel(weekStart: Date): string {
 	return weekStart.toISOString().slice(0, 10);
+}
+
+function formatDayLabel(timestamp: number): string {
+	return new Date(timestamp).toISOString().slice(0, 10);
+}
+
+function getDayEndTimestamp(dayLabel: string): number {
+	return Date.parse(`${dayLabel}T23:59:59.999Z`);
 }
 
 function getMessageTimestamp(message: TelegramExportMessage): number | null {
@@ -155,6 +177,172 @@ function isSupportedMediaOnlyMessage(message: TelegramExportMessage): boolean {
 	return false;
 }
 
+type ResolvedParticipant = {
+	id: string;
+	name?: string;
+};
+
+function isUserId(value: string | undefined): value is string {
+	return Boolean(value && value.startsWith('user'));
+}
+
+function addResolvedParticipant(
+	presentParticipants: Map<string, ResolvedParticipant>,
+	nameToUserIds: Map<string, Set<string>>,
+	userId: string | undefined,
+	name: string | undefined
+) {
+	if (!isUserId(userId)) {
+		return;
+	}
+
+	presentParticipants.set(userId, { id: userId, name });
+
+	if (name) {
+		const knownUserIds = nameToUserIds.get(name) ?? new Set<string>();
+		knownUserIds.add(userId);
+		nameToUserIds.set(name, knownUserIds);
+	}
+}
+
+function removeResolvedParticipantsByName(
+	presentParticipants: Map<string, ResolvedParticipant>,
+	nameToUserIds: Map<string, Set<string>>,
+	name: string
+) {
+	const matchingUserIds = nameToUserIds.get(name);
+
+	if (!matchingUserIds) {
+		return;
+	}
+
+	for (const userId of matchingUserIds) {
+		presentParticipants.delete(userId);
+	}
+}
+
+function aggregateActiveParticipantCounts(
+	labels: string[],
+	chronologicalMessages: Array<{ message: TelegramExportMessage; timestamp: number }>
+) {
+	const messageEvents = chronologicalMessages
+		.filter(
+			(entry) => entry.message.type === 'message' && isUserId(entry.message.from_id)
+		)
+		.map((entry) => ({
+			timestamp: entry.timestamp,
+			userId: entry.message.from_id as string
+		}));
+
+	const rollingWindow: Array<{ timestamp: number; userId: string }> = [];
+	const perUserCounts = new Map<string, number>();
+	const activeValues: number[] = [];
+	let nextEventIndex = 0;
+
+	for (const dayLabel of labels) {
+		const dayEndTimestamp = getDayEndTimestamp(dayLabel);
+		const windowStartTimestamp = dayEndTimestamp - 30 * 24 * 60 * 60 * 1000;
+
+		while (
+			nextEventIndex < messageEvents.length &&
+			messageEvents[nextEventIndex].timestamp <= dayEndTimestamp
+		) {
+			const event = messageEvents[nextEventIndex];
+			rollingWindow.push(event);
+			perUserCounts.set(event.userId, (perUserCounts.get(event.userId) ?? 0) + 1);
+			nextEventIndex += 1;
+		}
+
+		while (rollingWindow.length > 0 && rollingWindow[0].timestamp < windowStartTimestamp) {
+			const expiredEvent = rollingWindow.shift();
+
+			if (!expiredEvent) {
+				break;
+			}
+
+			const nextCount = (perUserCounts.get(expiredEvent.userId) ?? 1) - 1;
+
+			if (nextCount <= 0) {
+				perUserCounts.delete(expiredEvent.userId);
+			} else {
+				perUserCounts.set(expiredEvent.userId, nextCount);
+			}
+		}
+
+		let activeCount = 0;
+
+		for (const count of perUserCounts.values()) {
+			if (count >= 5) {
+				activeCount += 1;
+			}
+		}
+
+		activeValues.push(activeCount);
+	}
+
+	return {
+		activeValues,
+		currentActiveCount: activeValues.at(-1) ?? 0
+	};
+}
+
+function aggregateParticipantTimeline(messages: TelegramExportMessage[]) {
+	const timeline = new Map<string, number>();
+	const chronologicalMessages = messages
+		.map((message) => ({ message, timestamp: getMessageTimestamp(message) }))
+		.filter(
+			(entry): entry is { message: TelegramExportMessage; timestamp: number } => entry.timestamp !== null
+		)
+		.sort((left, right) => left.timestamp - right.timestamp);
+
+	const presentParticipants = new Map<string, ResolvedParticipant>();
+	const nameToUserIds = new Map<string, Set<string>>();
+	let peakCount = 0;
+
+	for (const entry of chronologicalMessages) {
+		if (entry.message.type === 'message') {
+			addResolvedParticipant(
+				presentParticipants,
+				nameToUserIds,
+				entry.message.from_id,
+				entry.message.from
+			);
+		}
+
+		if (entry.message.type === 'service') {
+			addResolvedParticipant(
+				presentParticipants,
+				nameToUserIds,
+				entry.message.actor_id,
+				entry.message.actor
+			);
+
+			if (entry.message.action === 'remove_members') {
+				for (const memberName of entry.message.members ?? []) {
+					removeResolvedParticipantsByName(presentParticipants, nameToUserIds, memberName);
+				}
+			}
+		}
+
+		const participantCount = presentParticipants.size;
+		peakCount = Math.max(peakCount, participantCount);
+		timeline.set(formatDayLabel(entry.timestamp), participantCount);
+	}
+
+	const labels = [...timeline.keys()];
+	const values = [...timeline.values()];
+	const activeParticipantTimeline = aggregateActiveParticipantCounts(labels, chronologicalMessages);
+
+	return {
+		labels,
+		values,
+		activeValues: activeParticipantTimeline.activeValues,
+		currentCount: values.at(-1) ?? 0,
+		currentActiveCount: activeParticipantTimeline.currentActiveCount,
+		peakCount
+	};
+}
+
 export function classifyTelegramMessage(message: TelegramExportMessage): MessageClassification {
 	if (message.type !== 'message') {
 		return 'ignore';
@@ -213,6 +401,7 @@ function aggregateMessagesByWeek(messages: TelegramExportMessage[]): WeeklyAggre
 
 export function analyzeTelegramExport(telegramExport: TelegramExport): WeeklyChartData {
 	const messages = telegramExport.messages ?? [];
+	const participantTimeline = aggregateParticipantTimeline(messages);
 	const weeklyMessages = aggregateMessagesByWeek(messages);
 	const totalMessages = weeklyMessages.reduce(
 		(sum, week) => sum + week.textCount + week.mediaOnlyCount,
@@ -230,6 +419,7 @@ export function analyzeTelegramExport(telegramExport: TelegramExport): WeeklyCha
 
 	return {
 		chatName: telegramExport.name ?? 'Telegram Chat',
+		participantTimeline,
 		weeklyMessages: {
 			labels: weeklyMessages.map((week) => week.label),
 			textValues: weeklyMessages.map((week) => week.textCount),

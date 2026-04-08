@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import ChartJS from 'chart.js/auto';
 	import type { BorderRadius, Chart, ScriptableContext } from 'chart.js';
+	import AnimatedNumber from '$lib/AnimatedNumber.svelte';
+	import MiniAreaChart from '$lib/MiniAreaChart.svelte';
 	import type { WeeklyChartData } from '$lib/telegram-analysis';
 
 	let { data }: { data: WeeklyChartData } = $props();
@@ -138,30 +140,39 @@
 				Weekly message volume for the imported Telegram history. Service events are excluded.
 			</p>
 		</div>
-
-		<div class="hero-note">
-			<p class="hero-label">Range</p>
-			<p class="hero-value">{data.range.start} to {data.range.end}</p>
-		</div>
 	</section>
 
 	<section class="stats-grid" aria-label="Chat summary">
 		<article class="stat-card">
-			<p>Total classified messages</p>
-			<strong>{data.totalMessages.toLocaleString()}</strong>
+			<p>Total messages</p>
+			<strong><AnimatedNumber value={data.totalMessages} /></strong>
+			<div class="stat-subset">
+				<span>Media-only messages</span>
+				<b><AnimatedNumber value={data.mediaOnlyMessages} duration={700} /></b>
+			</div>
 		</article>
-		<article class="stat-card">
-			<p>Messages with text</p>
-			<strong>{data.textMessages.toLocaleString()}</strong>
-		</article>
-		<article class="stat-card">
-			<p>Media-only messages</p>
-			<strong>{data.mediaOnlyMessages.toLocaleString()}</strong>
-		</article>
-		<article class="stat-card accent">
-			<p>Busiest week</p>
-			<strong>{data.busiestWeek.label}</strong>
-			<span>{data.busiestWeek.count.toLocaleString()} messages</span>
+
+		<article class="stat-card participant-card">
+			<div class="participant-header">
+				<div class="participant-metrics">
+					<div class="participant-metric-row participant-metric-row-primary">
+						<strong><AnimatedNumber value={data.participantTimeline.currentCount} /></strong>
+						<span>Participants</span>
+					</div>
+					<div class="participant-metric-row participant-metric-row-secondary">
+						<b><AnimatedNumber value={data.participantTimeline.currentActiveCount} duration={700} /></b>
+						<span>Active</span>
+					</div>
+				</div>
+			</div>
+			<MiniAreaChart
+				labels={data.participantTimeline.labels}
+				values={data.participantTimeline.values}
+				overlayValues={data.participantTimeline.activeValues}
+				lineColor="#0f766e"
+				fillColor="rgba(15, 118, 110, 0.14)"
+				overlayLineColor="#f59e0b"
+			/>
 		</article>
 	</section>
 
@@ -171,9 +182,6 @@
 				<p class="eyebrow">Chart</p>
 				<h2>Messages per week</h2>
 			</div>
-			<p class="chart-caption">
-				Stacked by text vs media-only messages. {data.weekCount} ISO weeks, starting on Monday.
-			</p>
 		</div>
 
 		<div class="chart-frame">
@@ -199,18 +207,12 @@
 	}
 
 	.hero {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		gap: 1.5rem;
-		align-items: end;
+		display: block;
 		margin-bottom: 1.5rem;
 	}
 
 	.eyebrow,
-	.hero-label,
-	.chart-caption,
-	.stat-card p,
-	.hero-note p {
+	.stat-card p {
 		margin: 0;
 		font-size: 0.875rem;
 		letter-spacing: 0.08em;
@@ -220,7 +222,6 @@
 
 	h1,
 	h2,
-	.hero-value,
 	.stat-card strong {
 		font-family: 'Sora', 'Segoe UI', sans-serif;
 	}
@@ -239,7 +240,6 @@
 		color: #3f3f46;
 	}
 
-	.hero-note,
 	.stat-card,
 	.chart-card {
 		background: rgba(255, 255, 255, 0.82);
@@ -248,20 +248,9 @@
 		box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
 	}
 
-	.hero-note {
-		padding: 1rem 1.2rem;
-		border-radius: 1.25rem;
-		min-width: 15rem;
-	}
-
-	.hero-value {
-		margin: 0.35rem 0 0;
-		font-size: 1.125rem;
-	}
-
 	.stats-grid {
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
 		gap: 1rem;
 		margin-bottom: 1rem;
 	}
@@ -278,14 +267,80 @@
 		line-height: 1;
 	}
 
-	.stat-card span {
-		display: inline-block;
-		margin-top: 0.5rem;
+	.stat-subset {
+		margin-top: 0.9rem;
+		padding-top: 0.8rem;
+		border-top: 1px solid rgba(15, 118, 110, 0.12);
 		color: #52525b;
 	}
 
-	.stat-card.accent {
-		background: linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(255, 255, 255, 0.92));
+	.stat-subset span {
+		display: block;
+		font-size: 0.82rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.stat-subset b {
+		display: block;
+		margin-top: 0.35rem;
+		font-family: 'Sora', 'Segoe UI', sans-serif;
+		font-size: 1.05rem;
+		font-weight: 600;
+		color: #27272a;
+	}
+
+	.participant-card {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.participant-header {
+		display: block;
+	}
+
+	.participant-metrics {
+		display: flex;
+		justify-content: flex-start;
+		align-items: baseline;
+		gap: 0.9rem;
+		flex-wrap: nowrap;
+		width: fit-content;
+		max-width: 100%;
+	}
+
+	.participant-metric-row {
+		display: flex;
+		align-items: baseline;
+		gap: 0.45rem;
+		color: #27272a;
+		white-space: nowrap;
+	}
+
+	.participant-metric-row span {
+		font-size: 0.82rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #52525b;
+	}
+
+	.participant-metric-row b,
+	.participant-metric-row strong {
+		font-family: 'Sora', 'Segoe UI', sans-serif;
+		font-size: 1.65rem;
+		font-weight: 600;
+		line-height: 1;
+	}
+
+	.participant-metric-row-primary strong {
+		color: #0f766e;
+	}
+
+	.participant-metric-row-secondary b {
+		font-size: 1.2rem;
+		color: #f59e0b;
 	}
 
 	.chart-card {
@@ -295,8 +350,7 @@
 
 	.chart-header {
 		display: flex;
-		justify-content: space-between;
-		gap: 1rem;
+		justify-content: flex-start;
 		align-items: end;
 		margin-bottom: 1rem;
 	}
@@ -304,12 +358,6 @@
 	h2 {
 		margin: 0.25rem 0 0;
 		font-size: clamp(1.5rem, 2vw, 2.25rem);
-	}
-
-	.chart-caption {
-		max-width: 18rem;
-		text-align: right;
-		line-height: 1.5;
 	}
 
 	.chart-frame {
@@ -322,19 +370,12 @@
 			padding: 1.5rem 1rem 3rem;
 		}
 
-		.hero,
 		.stats-grid {
 			grid-template-columns: 1fr;
 		}
 
-		.chart-header {
-			flex-direction: column;
-			align-items: flex-start;
-		}
-
-		.chart-caption {
-			max-width: none;
-			text-align: left;
+		.participant-metrics {
+			flex-wrap: wrap;
 		}
 	}
 </style>

@@ -111,4 +111,123 @@ describe('analyzeTelegramExport', () => {
 		assert.deepEqual(report.busiestWeek, { label: '2025-12-08', count: 3 });
 		assert.deepEqual(report.range, { start: '2025-12-08', end: '2025-12-22' });
 	});
+
+	test('builds participant timeline from membership events', () => {
+		const report = analyzeTelegramExport({
+			name: 'Test chat',
+			messages: [
+				{
+					type: 'service',
+					action: 'create_group',
+					actor: 'Imran',
+					actor_id: 'user1',
+					date: '2025-12-14T14:12:33',
+					date_unixtime: '1765710753',
+					members: ['Imran']
+				},
+				{
+					type: 'service',
+					action: 'join_group_by_link',
+					actor: 'Alice',
+					actor_id: 'user2',
+					date: '2025-12-15T09:00:00',
+					date_unixtime: '1765789200'
+				},
+				{
+					type: 'message',
+					from: 'A',
+					from_id: 'user3',
+					date: '2025-12-15T10:00:00',
+					date_unixtime: '1765792800',
+					text: 'hello'
+				},
+				{
+					type: 'message',
+					from: 'B',
+					from_id: 'user4',
+					date: '2025-12-15T10:30:00',
+					date_unixtime: '1765794600',
+					text: 'hello'
+				},
+				{
+					type: 'service',
+					action: 'remove_members',
+					date: '2025-12-16T11:00:00',
+					date_unixtime: '1765882800',
+					members: ['A']
+				}
+			]
+		});
+
+		assert.deepEqual(report.participantTimeline.labels, ['2025-12-14', '2025-12-15', '2025-12-16']);
+		assert.deepEqual(report.participantTimeline.values, [1, 4, 3]);
+		assert.deepEqual(report.participantTimeline.activeValues, [0, 0, 0]);
+		assert.equal(report.participantTimeline.currentCount, 3);
+		assert.equal(report.participantTimeline.currentActiveCount, 0);
+		assert.equal(report.participantTimeline.peakCount, 4);
+	});
+
+	test('counts active participants in a rolling 30-day window', () => {
+		const report = analyzeTelegramExport({
+			name: 'Active window chat',
+			messages: [
+				createMessage({
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-01T09:00:00',
+					date_unixtime: '1764579600',
+					text: '1'
+				}),
+				createMessage({
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-05T09:00:00',
+					date_unixtime: '1764925200',
+					text: '2'
+				}),
+				createMessage({
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-10T09:00:00',
+					date_unixtime: '1765357200',
+					text: '3'
+				}),
+				createMessage({
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-15T09:00:00',
+					date_unixtime: '1765789200',
+					text: '4'
+				}),
+				createMessage({
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-20T09:00:00',
+					date_unixtime: '1766221200',
+					text: '5'
+				}),
+				createMessage({
+					from: 'Bob',
+					from_id: 'user2',
+					date: '2025-12-20T10:00:00',
+					date_unixtime: '1766224800',
+					text: 'hi'
+				}),
+				createMessage({
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2026-01-10T09:00:00',
+					date_unixtime: '1768035600',
+					text: '6'
+				})
+			]
+		});
+
+		assert.deepEqual(
+			report.participantTimeline.labels,
+			['2025-12-01', '2025-12-05', '2025-12-10', '2025-12-15', '2025-12-20', '2026-01-10']
+		);
+		assert.deepEqual(report.participantTimeline.activeValues, [0, 0, 0, 0, 1, 0]);
+		assert.equal(report.participantTimeline.currentActiveCount, 0);
+	});
 });
