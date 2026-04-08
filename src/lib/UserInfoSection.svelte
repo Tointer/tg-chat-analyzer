@@ -1,39 +1,74 @@
 <script lang="ts">
 	import MessageBucketsChart from '$lib/MessageBucketsChart.svelte';
 	import MessagePeriodToggle from '$lib/MessagePeriodToggle.svelte';
+	import SegmentedSelector from '$lib/SegmentedSelector.svelte';
 	import type { AppTheme } from '$lib';
 	import type { MessageBucketsChart as MessageBucketsChartData } from '$lib/telegram-analysis';
 
 	type PeriodKey = 'day' | 'week';
+	type MetricKey = 'messages' | 'characters';
 
 	export type UserInfoCardItem = {
 		userId: string;
 		userName: string;
-		messageCount: number;
-		messageBucketsByPeriod: Record<PeriodKey, MessageBucketsChartData>;
+		metrics: Record<
+			MetricKey,
+			{
+				label: string;
+				totalValue: number;
+				messageBucketsByPeriod: Record<PeriodKey, MessageBucketsChartData>;
+			}
+		>;
 	};
 
 	type Props = {
 		users: UserInfoCardItem[];
 		selectedUserId: string | null;
 		selectedPeriod: PeriodKey;
+		selectedMetric: MetricKey;
 		activeTheme: AppTheme;
 		onSelectUser: (userId: string) => void;
 		onSelectPeriod: (period: PeriodKey) => void;
+		onSelectMetric: (metric: MetricKey) => void;
 	};
 
-	let { users, selectedUserId, selectedPeriod, activeTheme, onSelectUser, onSelectPeriod }: Props =
-		$props();
+	let {
+		users,
+		selectedUserId,
+		selectedPeriod,
+		selectedMetric,
+		activeTheme,
+		onSelectUser,
+		onSelectPeriod,
+		onSelectMetric
+	}: Props = $props();
 	let scrollViewport = $state<HTMLDivElement | undefined>(undefined);
 	let showTopFade = $state(false);
 	let showBottomFade = $state(false);
+	const metricOptions = [
+		{ value: 'messages', label: 'Message Count' },
+		{ value: 'characters', label: 'Characters Count' }
+	];
+
+	const sortedUsers = $derived(
+		[...users].sort((left, right) => {
+			const valueDifference = right.metrics[selectedMetric].totalValue - left.metrics[selectedMetric].totalValue;
+
+			if (valueDifference !== 0) {
+				return valueDifference;
+			}
+
+			return left.userName.localeCompare(right.userName);
+		})
+	);
 
 	const selectedUser = $derived(
-		users.find((user) => user.userId === selectedUserId) ?? users[0] ?? null
+		sortedUsers.find((user) => user.userId === selectedUserId) ?? sortedUsers[0] ?? null
 	);
 	const selectedMessageBuckets = $derived(
-		selectedUser?.messageBucketsByPeriod[selectedPeriod] ?? null
+		selectedUser?.metrics[selectedMetric].messageBucketsByPeriod[selectedPeriod] ?? null
 	);
+	const selectedMetricData = $derived(selectedUser?.metrics[selectedMetric] ?? null);
 
 	function updateScrollFades() {
 		if (!scrollViewport) {
@@ -70,6 +105,7 @@
 
 	$effect(() => {
 		users;
+		selectedMetric;
 		selectedUserId;
 		queueMicrotask(() => {
 			updateScrollFades();
@@ -82,8 +118,18 @@
 	aria-label="User information"
 >
 	<div class="mb-4 shrink-0">
-		<h2 class="m-0 text-2xl font-display sm:text-3xl">User info</h2>
-		<p class="mt-2 text-sm text-app-muted">Select a participant to inspect their message volume by day or week.</p>
+		<div class="flex flex-wrap items-end justify-between gap-3">
+			<div>
+				<h2 class="m-0 text-2xl font-display sm:text-3xl">User info</h2>
+				<p class="mt-2 text-sm text-app-muted">Select a participant to inspect their message or character volume by day or week.</p>
+			</div>
+			<SegmentedSelector
+				selectedValue={selectedMetric}
+				onSelectValue={(value) => onSelectMetric(value as MetricKey)}
+				options={metricOptions}
+				ariaLabel="User info metric selector"
+			/>
+		</div>
 	</div>
 
 	<div class="grid min-h-0 flex-1 auto-rows-fr gap-4 lg:grid-cols-3 lg:gap-6">
@@ -97,7 +143,7 @@
 					onscroll={updateScrollFades}
 				>
 				<div class="space-y-2">
-					{#each users as user}
+					{#each sortedUsers as user}
 						<button
 							type="button"
 							class={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition-colors ${selectedUser?.userId === user.userId ? 'bg-app-accent-strong text-app-accent-contrast shadow-app-button' : 'bg-app-surface hover:bg-app-empty text-app-text'}`}
@@ -106,10 +152,10 @@
 							<span class="min-w-0 pr-3">
 								<span class="block truncate text-sm font-semibold sm:text-base">{user.userName}</span>
 								<span class={`block text-xs uppercase tracking-wide ${selectedUser?.userId === user.userId ? 'text-app-accent-contrast/80' : 'text-app-muted'}`}>
-									Messages
+									{user.metrics[selectedMetric].label}
 								</span>
 							</span>
-							<strong class="shrink-0 text-lg font-display">{user.messageCount}</strong>
+							<strong class="shrink-0 text-lg font-display">{user.metrics[selectedMetric].totalValue}</strong>
 						</button>
 					{/each}
 				</div>
@@ -126,8 +172,8 @@
 					</div>
 					<div class="flex flex-wrap items-end justify-end gap-3 sm:gap-4">
 						<div class="text-right">
-							<p class="m-0 text-xs uppercase tracking-widest text-app-subtle">Total messages</p>
-							<strong class="mt-2 block text-3xl font-display text-app-text">{selectedUser.messageCount}</strong>
+							<p class="m-0 text-xs uppercase tracking-widest text-app-subtle">Total {selectedMetricData?.label.toLowerCase()}</p>
+							<strong class="mt-2 block text-3xl font-display text-app-text">{selectedMetricData?.totalValue ?? 0}</strong>
 						</div>
 						<MessagePeriodToggle
 							selectedPeriod={selectedPeriod}
@@ -139,7 +185,7 @@
 
 				<div class="min-h-0 flex-1">
 					<MessageBucketsChart
-						messageBuckets={selectedMessageBuckets ?? selectedUser.messageBucketsByPeriod.week}
+						messageBuckets={selectedMessageBuckets ?? selectedUser.metrics[selectedMetric].messageBucketsByPeriod.week}
 						{activeTheme}
 						heightClass="h-full min-h-0"
 						emptyMessage="Not enough data to draw this user's chart yet."

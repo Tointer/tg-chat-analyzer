@@ -1,4 +1,5 @@
 import type {
+	MessageBucketValueMetric,
 	NormalizedTimeRange,
 	NormalizedTimeBucket,
 	TelegramExportMessage,
@@ -100,6 +101,13 @@ export function getTimeBucketGroupingLabel(bucket: NormalizedTimeBucket): string
 
 export function getTimeBucketTitle(bucket: NormalizedTimeBucket): string {
 	return `Messages per ${getTimeBucketGroupingLabel(bucket)}`;
+}
+
+export function getTimeBucketMetricTitle(
+	metric: MessageBucketValueMetric,
+	bucket: NormalizedTimeBucket
+): string {
+	return `${metric === 'characters' ? 'Characters' : 'Messages'} per ${getTimeBucketGroupingLabel(bucket)}`;
 }
 
 export function getTimeBucketStart(timestamp: number, bucket: NormalizedTimeBucket): Date {

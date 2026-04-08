@@ -13,6 +13,7 @@
 	import type { MessageBucketsChart, TelegramAnalysisReport } from '$lib/telegram-analysis';
 
 	type PeriodKey = 'day' | 'week';
+	type UserMetricKey = 'messages' | 'characters';
 
 	type PageData = {
 		selectedPeriod: 'day' | 'week';
@@ -20,8 +21,14 @@
 		userInfoCards: Array<{
 			userId: string;
 			userName: string;
-			messageCount: number;
-			messageBucketsByPeriod: Record<PeriodKey, MessageBucketsChart>;
+			metrics: Record<
+				UserMetricKey,
+				{
+					label: string;
+					totalValue: number;
+					messageBucketsByPeriod: Record<PeriodKey, MessageBucketsChart>;
+				}
+			>;
 		}>;
 	};
 
@@ -29,6 +36,7 @@
 	let selectedPeriod = $state<PeriodKey>('week');
 	let selectedUserId = $state<string | null>(null);
 	let selectedUserPeriod = $state<PeriodKey>('week');
+	let selectedUserMetric = $state<UserMetricKey>('messages');
 
 	const currentReport = $derived(data.periodReports[selectedPeriod]);
 	const themeName = fromStore(activeThemeName);
@@ -49,10 +57,15 @@
 		selectedUserPeriod = period;
 	}
 
+	function selectUserMetric(metric: UserMetricKey) {
+		selectedUserMetric = metric;
+	}
+
 	$effect(() => {
 		selectedPeriod = data.selectedPeriod;
 		selectedUserId = data.userInfoCards[0]?.userId ?? null;
 		selectedUserPeriod = 'week';
+		selectedUserMetric = 'messages';
 	});
 </script>
 
@@ -86,8 +99,10 @@
 		users={data.userInfoCards}
 		selectedUserId={selectedUserId}
 		selectedPeriod={selectedUserPeriod}
+		selectedMetric={selectedUserMetric}
 		{activeTheme}
 		onSelectUser={selectUser}
 		onSelectPeriod={selectUserPeriod}
+		onSelectMetric={selectUserMetric}
 	/>
 </div>

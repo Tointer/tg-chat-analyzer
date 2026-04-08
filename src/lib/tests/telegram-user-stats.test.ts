@@ -208,4 +208,36 @@ describe('getTelegramUserStats', () => {
 			averageReplyLatencyMs: 7.5 * 60 * 1000
 		});
 	});
+
+	test('excludes forwarded text from character totals', () => {
+		const index = buildTelegramAnalyticsIndex({
+			name: 'Forwarded text stats chat',
+			messages: [
+				createMessage({
+					id: 1,
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-14T10:00:00',
+					date_unixtime: '1765706400',
+					text: 'written here'
+				}),
+				createMessage({
+					id: 2,
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-14T10:05:00',
+					date_unixtime: '1765706700',
+					forwarded_from: 'Channel',
+					forwarded_from_id: 'channel1',
+					text: 'forwarded payload'
+				})
+			]
+		});
+
+		const aliceStats = getTelegramUserStatsById(index, 'user1');
+
+		assert.equal(aliceStats?.totalMessages, 2);
+		assert.equal(aliceStats?.totalTextLength, 'written here'.length);
+		assert.equal(aliceStats?.averageTextLength, 'written here'.length / 2);
+	});
 });

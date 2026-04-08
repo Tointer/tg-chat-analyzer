@@ -76,6 +76,14 @@ function extractTextContent(message: TelegramExportMessage): string {
 	return '';
 }
 
+function getUserAuthoredTextLength(message: TelegramExportMessage): number {
+	if (message.forwarded_from || message.forwarded_from_id) {
+		return 0;
+	}
+
+	return extractTextContent(message).length;
+}
+
 function buildBucketKey(bucket: NormalizedTimeBucket, timeRange?: NormalizedTimeRange | null): string {
 	if (!timeRange) {
 		return `${bucket.unit}:${bucket.size}:full`;
@@ -115,6 +123,7 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 
 	const chronologicalMessages = getChronologicalMessages(telegramExport.messages ?? []);
 	const messages = chronologicalMessages.map(({ message, timestamp }) => {
+		const textContent = extractTextContent(message);
 		const normalizedMessage: NormalizedTelegramMessage = {
 			original: message,
 			id: typeof message.id === 'number' ? message.id : null,
@@ -126,8 +135,8 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 			senderName: message.from ?? null,
 			actorId: message.actor_id ?? null,
 			actorName: message.actor ?? null,
-			textContent: extractTextContent(message),
-			textLength: extractTextContent(message).length,
+			textContent,
+			textLength: getUserAuthoredTextLength(message),
 			hasMedia: Boolean(
 				message.photo || message.file || message.media_type || message.mime_type || message.sticker_emoji
 			),

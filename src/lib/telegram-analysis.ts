@@ -15,6 +15,7 @@ import type {
 
 export { classifyTelegramMessage };
 export type {
+	MessageBucketValueMetric,
 	MessageBucketsChart,
 	MessageClassification,
 	TimeRangeSpec,

@@ -16,6 +16,7 @@ import {
 import type {
 	MessageClassification,
 	MessageBucketAggregate,
+	MessageBucketValueMetric,
 	NormalizedTimeRange,
 	TelegramExportMessage,
 	TimeRangeSpec,
@@ -147,7 +148,8 @@ export function classifyTelegramMessage(message: TelegramExportMessage): Message
 export function aggregateMessagesByTimeBucket(
 	index: AnalyticsIndex,
 	bucket?: TimeBucketSpec,
-	timeRange?: TimeRangeSpec
+	timeRange?: TimeRangeSpec,
+	metric: MessageBucketValueMetric = 'messages'
 ): MessageBucketAggregate[] {
 	const normalizedBucket = normalizeTimeBucket(bucket);
 	const normalizedTimeRange = normalizeTimeRange(timeRange, index.stats.dateRange);
@@ -160,7 +162,8 @@ export function aggregateMessagesByTimeBucket(
 	const aggregates = aggregateNormalizedMessagesByTimeBucket(
 		index.messages,
 		normalizedBucket,
-		normalizedTimeRange
+		normalizedTimeRange,
+		metric
 	);
 
 	setBucketAggregateCache(index, normalizedBucket, normalizedTimeRange, aggregates);
@@ -171,7 +174,8 @@ export function aggregateMessagesByTimeBucket(
 export function aggregateNormalizedMessagesByTimeBucket(
 	messages: NormalizedTelegramMessage[],
 	bucket?: TimeBucketSpec,
-	timeRange?: TimeRangeSpec | NormalizedTimeRange | null
+	timeRange?: TimeRangeSpec | NormalizedTimeRange | null,
+	metric: MessageBucketValueMetric = 'messages'
 ): MessageBucketAggregate[] {
 	const normalizedBucket = normalizeTimeBucket(bucket);
 
@@ -209,13 +213,14 @@ export function aggregateNormalizedMessagesByTimeBucket(
 			lowInfoCount: 0,
 			mediaOnlyCount: 0
 		};
+		const increment = metric === 'characters' ? message.textLength : 1;
 
 		if (message.classification === 'media-only') {
-			bucketCounts.mediaOnlyCount += 1;
+			bucketCounts.mediaOnlyCount += increment;
 		} else if (message.classification === 'low-info') {
-			bucketCounts.lowInfoCount += 1;
+			bucketCounts.lowInfoCount += increment;
 		} else {
-			bucketCounts.otherCount += 1;
+			bucketCounts.otherCount += increment;
 		}
 
 		counts.set(key, bucketCounts);

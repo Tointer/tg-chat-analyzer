@@ -1,12 +1,18 @@
 import type { AnalyticsIndex, NormalizedTelegramMessage } from './telegram-analytics-index';
 import {
 	getTimeBucketGroupingLabel,
+	getTimeBucketMetricTitle,
 	getTimeBucketTitle,
 	normalizeTimeRange,
 	normalizeTimeBucket
 } from './telegram-analysis-shared';
 import { aggregateNormalizedMessagesByTimeBucket } from './telegram-text-analyzer';
-import type { MessageBucketsChart, TimeRangeSpec, TimeBucketSpec } from './telegram-analysis-types';
+import type {
+	MessageBucketsChart,
+	MessageBucketValueMetric,
+	TimeRangeSpec,
+	TimeBucketSpec
+} from './telegram-analysis-types';
 
 const userMessageBucketsCache = new WeakMap<
 	AnalyticsIndex,
@@ -17,20 +23,22 @@ function createBucketCacheKey(
 	userId: string,
 	unit: string,
 	size: number,
+	metric: MessageBucketValueMetric,
 	timeRange: { startTimestamp: number; endTimestamp: number } | null
 ) {
 	if (!timeRange) {
-		return `${userId}:${unit}:${size}:full`;
+		return `${userId}:${unit}:${size}:${metric}:full`;
 	}
 
-	return `${userId}:${unit}:${size}:${timeRange.startTimestamp}:${timeRange.endTimestamp}`;
+	return `${userId}:${unit}:${size}:${metric}:${timeRange.startTimestamp}:${timeRange.endTimestamp}`;
 }
 
-export function getTelegramUserMessageBuckets(
+export function getTelegramUserMetricBuckets(
 	index: AnalyticsIndex,
 	userId: string,
 	bucket?: TimeBucketSpec,
-	timeRange?: TimeRangeSpec
+	timeRange?: TimeRangeSpec,
+	metric: MessageBucketValueMetric = 'messages'
 ): MessageBucketsChart {
 	const normalizedBucket = normalizeTimeBucket(bucket);
 	const normalizedTimeRange = normalizeTimeRange(timeRange, index.stats.dateRange);
@@ -38,6 +46,7 @@ export function getTelegramUserMessageBuckets(
 		userId,
 		normalizedBucket.unit,
 		normalizedBucket.size,
+		metric,
 		normalizedTimeRange
 	);
 	const cacheForIndex = userMessageBucketsCache.get(index) ?? new Map<string, MessageBucketsChart>();
@@ -51,22 +60,34 @@ export function getTelegramUserMessageBuckets(
 	const aggregatedBuckets = aggregateNormalizedMessagesByTimeBucket(
 		messages,
 		normalizedBucket,
-		normalizedTimeRange
+		normalizedTimeRange,
+		metric
 	);
-	const visibleBuckets = aggregatedBuckets;
 	const chart: MessageBucketsChart = {
 		bucket: normalizedBucket,
-		title: getTimeBucketTitle(normalizedBucket),
+		title:
+			metric === 'messages'
+				? getTimeBucketTitle(normalizedBucket)
+				: getTimeBucketMetricTitle(metric, normalizedBucket),
 		groupingLabel: getTimeBucketGroupingLabel(normalizedBucket),
 		trimmedEdgeBucketCount: 0,
-		labels: visibleBuckets.map((entry) => entry.label),
-		tooltipLabels: visibleBuckets.map((entry) => entry.tooltipLabel),
-		otherValues: visibleBuckets.map((entry) => entry.otherCount),
-		lowInfoValues: visibleBuckets.map((entry) => entry.lowInfoCount),
-		mediaOnlyValues: visibleBuckets.map((entry) => entry.mediaOnlyCount)
+		labels: aggregatedBuckets.map((entry) => entry.label),
+		tooltipLabels: aggregatedBuckets.map((entry) => entry.tooltipLabel),
+		otherValues: aggregatedBuckets.map((entry) => entry.otherCount),
+		lowInfoValues: aggregatedBuckets.map((entry) => entry.lowInfoCount),
+		mediaOnlyValues: aggregatedBuckets.map((entry) => entry.mediaOnlyCount)
 	};
 
 	cacheForIndex.set(cacheKey, chart);
 	userMessageBucketsCache.set(index, cacheForIndex);
 	return chart;
+}
+
+export function getTelegramUserMessageBuckets(
+	index: AnalyticsIndex,
+	userId: string,
+	bucket?: TimeBucketSpec,
+	timeRange?: TimeRangeSpec
+): MessageBucketsChart {
+	return getTelegramUserMetricBuckets(index, userId, bucket, timeRange, 'messages');
 }

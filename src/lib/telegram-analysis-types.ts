@@ -56,6 +56,8 @@ export type MessageBucketAggregate = {
 	mediaOnlyCount: number;
 };
 
+export type MessageBucketValueMetric = 'messages' | 'characters';
+
 export type TimeRangeSpec = {
 	startTimestamp?: number;
 	endTimestamp?: number;
