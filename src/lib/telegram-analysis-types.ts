@@ -7,11 +7,13 @@ export type TelegramTextEntity = {
 export type TelegramTextPart = string | TelegramTextEntity;
 
 export type TelegramExportMessage = {
+	id?: number;
 	type?: string;
 	date?: string;
 	date_unixtime?: string;
 	forwarded_from?: string;
 	forwarded_from_id?: string;
+	reply_to_message_id?: number;
 	action?: string;
 	actor?: string;
 	actor_id?: string;

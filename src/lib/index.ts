@@ -4,6 +4,7 @@ export { default as ChatPageHeader } from './ChatPageHeader.svelte';
 export { default as ChatSummaryCards } from './ChatSummaryCards.svelte';
 export { default as MessageBucketsSection } from './MessageBucketsSection.svelte';
 export { ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD } from './telegram-analysis-config';
+export { buildTelegramAnalyticsIndex } from './telegram-analytics-index';
 export {
 	activeThemeName,
 	appThemes,

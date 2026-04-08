@@ -1,5 +1,6 @@
 import { ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD } from './telegram-analysis-config';
-import { getDayEndTimestamp, type ChronologicalMessage } from './telegram-analysis-shared';
+import type { NormalizedTelegramMessage } from './telegram-analytics-index';
+import { getDayEndTimestamp } from './telegram-analysis-shared';
 
 type ResolvedParticipant = {
 	id: string;
@@ -47,13 +48,13 @@ export function removeResolvedParticipantsByName(
 
 export function aggregateActiveParticipantCounts(
 	labels: string[],
-	chronologicalMessages: ChronologicalMessage[]
+	chronologicalMessages: NormalizedTelegramMessage[]
 ) {
 	const messageEvents = chronologicalMessages
-		.filter((entry) => entry.message.type === 'message' && isUserId(entry.message.from_id))
+		.filter((entry) => entry.messageType === 'message' && isUserId(entry.senderId ?? undefined))
 		.map((entry) => ({
 			timestamp: entry.timestamp,
-			userId: entry.message.from_id as string
+			userId: entry.senderId as string
 		}));
 
 	const rollingWindow: Array<{ timestamp: number; userId: string }> = [];

@@ -1,3 +1,4 @@
+import { buildTelegramAnalyticsIndex, type AnalyticsIndex } from './telegram-analytics-index';
 import { aggregateParticipantTimeline } from './telegram-group-analyzer';
 import {
 	getTimeBucketGroupingLabel,
@@ -27,10 +28,16 @@ export function analyzeTelegramExport(
 	telegramExport: TelegramExport,
 	options: TelegramAnalysisOptions = {}
 ): TelegramAnalysisReport {
-	const messages = telegramExport.messages ?? [];
-	const participantTimeline = aggregateParticipantTimeline(messages);
+	return analyzeTelegramAnalyticsIndex(buildTelegramAnalyticsIndex(telegramExport), options);
+}
+
+export function analyzeTelegramAnalyticsIndex(
+	index: AnalyticsIndex,
+	options: TelegramAnalysisOptions = {}
+): TelegramAnalysisReport {
+	const participantTimeline = aggregateParticipantTimeline(index);
 	const bucket = normalizeTimeBucket(options.messageBuckets);
-	const aggregatedMessageBuckets = aggregateMessagesByTimeBucket(messages, bucket);
+	const aggregatedMessageBuckets = aggregateMessagesByTimeBucket(index, bucket);
 	const visibleMessageBuckets =
 		aggregatedMessageBuckets.length > 2 ? aggregatedMessageBuckets.slice(1, -1) : [];
 	const totalMessages = aggregatedMessageBuckets.reduce(
@@ -61,7 +68,7 @@ export function analyzeTelegramExport(
 	);
 
 	return {
-		chatName: telegramExport.name ?? 'Telegram Chat',
+		chatName: index.chatName,
 		participantTimeline,
 		messageBuckets: {
 			bucket,

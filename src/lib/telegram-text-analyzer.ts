@@ -1,4 +1,9 @@
 import {
+	getBucketAggregateCache,
+	setBucketAggregateCache,
+	type AnalyticsIndex
+} from './telegram-analytics-index';
+import {
 	getTimeBucketAxisLabel,
 	getTimeBucketDateRange,
 	getMessageTimestamp,
@@ -135,10 +140,16 @@ export function classifyTelegramMessage(message: TelegramExportMessage): Message
 }
 
 export function aggregateMessagesByTimeBucket(
-	messages: TelegramExportMessage[],
+	index: AnalyticsIndex,
 	bucket?: TimeBucketSpec
 ): MessageBucketAggregate[] {
 	const normalizedBucket = normalizeTimeBucket(bucket);
+	const cachedAggregates = getBucketAggregateCache(index, normalizedBucket);
+
+	if (cachedAggregates) {
+		return cachedAggregates;
+	}
+
 	const counts = new Map<
 		string,
 		{
@@ -149,15 +160,12 @@ export function aggregateMessagesByTimeBucket(
 		}
 	>();
 
-	for (const message of messages) {
-		const timestamp = getMessageTimestamp(message);
-		const classification = classifyTelegramMessage(message);
-
-		if (timestamp === null || classification === 'ignore') {
+	for (const message of index.messages) {
+		if (message.classification === 'ignore') {
 			continue;
 		}
 
-		const bucketStart = getTimeBucketStart(timestamp, normalizedBucket);
+		const bucketStart = getTimeBucketStart(message.timestamp, normalizedBucket);
 		const key = bucketStart.toISOString();
 		const bucketCounts = counts.get(key) ?? {
 			start: bucketStart,
@@ -166,9 +174,9 @@ export function aggregateMessagesByTimeBucket(
 			mediaOnlyCount: 0
 		};
 
-		if (classification === 'media-only') {
+		if (message.classification === 'media-only') {
 			bucketCounts.mediaOnlyCount += 1;
-		} else if (classification === 'low-info') {
+		} else if (message.classification === 'low-info') {
 			bucketCounts.lowInfoCount += 1;
 		} else {
 			bucketCounts.otherCount += 1;
@@ -177,7 +185,7 @@ export function aggregateMessagesByTimeBucket(
 		counts.set(key, bucketCounts);
 	}
 
-	return [...counts.entries()]
+	const aggregates = [...counts.entries()]
 		.sort(([left], [right]) => left.localeCompare(right))
 		.map(([, count]) => {
 			const range = getTimeBucketDateRange(count.start, normalizedBucket);
@@ -192,4 +200,8 @@ export function aggregateMessagesByTimeBucket(
 				mediaOnlyCount: count.mediaOnlyCount
 			};
 		});
+
+	setBucketAggregateCache(index, normalizedBucket, aggregates);
+
+	return aggregates;
 }
