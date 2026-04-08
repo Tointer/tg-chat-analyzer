@@ -65,6 +65,7 @@
 	let scrollViewport = $state<HTMLDivElement | undefined>(undefined);
 	let showTopFade = $state(false);
 	let showBottomFade = $state(false);
+	let expandedFavoriteId = $state<string | null>(null);
 	const numberFormatter = new Intl.NumberFormat('en-US');
 	const decimalFormatter = new Intl.NumberFormat('en-US', {
 		minimumFractionDigits: 1,
@@ -73,7 +74,7 @@
 	const metricOptions = [
 		{ value: 'messages', label: 'Message Count' },
 		{ value: 'characters', label: 'Characters Count' },
-		{ value: 'favorites', label: 'Reply Favorites' }
+		{ value: 'favorites', label: 'Reply Peers' }
 	];
 	const isFavoriteView = $derived(selectedMetric === 'favorites');
 
@@ -117,6 +118,10 @@
 		return `${value > 0 ? '+' : value < 0 ? '-' : ''}${absoluteValue}`;
 	}
 
+	function toggleFavoriteDetails(targetUserId: string) {
+		expandedFavoriteId = expandedFavoriteId === targetUserId ? null : targetUserId;
+	}
+
 	function updateScrollFades() {
 		if (!scrollViewport) {
 			showTopFade = false;
@@ -154,6 +159,7 @@
 		void users;
 		void selectedMetric;
 		void selectedUserId;
+		expandedFavoriteId = null;
 		queueMicrotask(() => {
 			updateScrollFades();
 		});
@@ -224,7 +230,7 @@
 				<div class="mb-4 shrink-0 flex flex-wrap items-end justify-between gap-3">
 					<div>
 						<p class="m-0 text-sm uppercase tracking-widest text-app-accent">
-							{selectedMetric === 'favorites' ? 'Reply favorites' : 'Selected user'}
+							{selectedMetric === 'favorites' ? 'Reply peers for' : 'Selected user'}
 						</p>
 						<h3 class="mt-2 text-2xl font-display sm:text-3xl">{selectedUser.userName}</h3>
 					</div>
@@ -261,30 +267,43 @@
 											<div class="flex min-w-0 items-start gap-3">
 												<div class="min-w-0">
 													<h4 class="m-0 truncate text-base font-semibold text-app-text sm:text-lg">{favorite.targetUserName}</h4>
-													<p class="mt-1 text-sm text-app-muted">
-														Observed {numberFormatter.format(favorite.observedReplies)} replies vs expected {decimalFormatter.format(favorite.expectedReplies)}
-													</p>
+													<div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-app-muted">
+														<span>
+															Observed {numberFormatter.format(favorite.observedReplies)} replies vs expected {decimalFormatter.format(favorite.expectedReplies)}
+														</span>
+														<button
+															type="button"
+															class="flex h-5 min-w-5 items-center justify-center rounded-full border border-app-border bg-app-surface-strong px-1 text-[11px] font-semibold text-app-muted transition-colors hover:text-app-text"
+															aria-expanded={expandedFavoriteId === favorite.targetUserId}
+															aria-label={`${expandedFavoriteId === favorite.targetUserId ? 'Hide' : 'Show'} overlap details for ${favorite.targetUserName}`}
+															onclick={() => toggleFavoriteDetails(favorite.targetUserId)}
+														>
+															<span class={`transition-transform duration-200 ${expandedFavoriteId === favorite.targetUserId ? 'rotate-180' : ''}`}>▾</span>
+														</button>
+													</div>
 												</div>
 											</div>
 											<div class="text-right">
-												<p class="m-0 text-xs uppercase tracking-widest text-app-subtle">Excess replies</p>
-												<strong class="mt-2 block text-2xl font-display text-app-text">{formatSignedDecimal(favorite.residual)}</strong>
+												<p class="m-0 text-xs uppercase tracking-widest text-app-subtle">Score</p>
+												<strong class="mt-2 block text-2xl font-display text-app-text">{formatSignedDecimal(favorite.favoriteScore)}</strong>
 											</div>
 										</div>
-										<div class="mt-4 grid gap-3 text-sm text-app-muted sm:grid-cols-3">
-											<div>
-												<p class="m-0 text-[11px] uppercase tracking-widest text-app-subtle">Score</p>
-												<strong class="mt-1 block text-base font-display text-app-text">{formatSignedDecimal(favorite.favoriteScore)}</strong>
+										{#if expandedFavoriteId === favorite.targetUserId}
+											<div class="mt-4 grid gap-3 border-t border-app-border pt-4 text-sm text-app-muted sm:grid-cols-3">
+												<div>
+													<p class="m-0 text-[11px] uppercase tracking-widest text-app-subtle">Excess replies</p>
+													<strong class="mt-1 block text-base font-display text-app-text">{formatSignedDecimal(favorite.residual)}</strong>
+												</div>
+												<div>
+													<p class="m-0 text-[11px] uppercase tracking-widest text-app-subtle">Their messages in overlap</p>
+													<strong class="mt-1 block text-base font-display text-app-text">{numberFormatter.format(favorite.overlapTargetMessageCount)}</strong>
+												</div>
+												<div>
+													<p class="m-0 text-[11px] uppercase tracking-widest text-app-subtle">Reply pool in overlap</p>
+													<strong class="mt-1 block text-base font-display text-app-text">{numberFormatter.format(favorite.overlapReplyCount)}</strong>
+												</div>
 											</div>
-											<div>
-												<p class="m-0 text-[11px] uppercase tracking-widest text-app-subtle">Their messages in overlap</p>
-												<strong class="mt-1 block text-base font-display text-app-text">{numberFormatter.format(favorite.overlapTargetMessageCount)}</strong>
-											</div>
-											<div>
-												<p class="m-0 text-[11px] uppercase tracking-widest text-app-subtle">Reply pool in overlap</p>
-												<strong class="mt-1 block text-base font-display text-app-text">{numberFormatter.format(favorite.overlapReplyCount)}</strong>
-											</div>
-										</div>
+										{/if}
 									</RankedListItem>
 								{/each}
 							</div>

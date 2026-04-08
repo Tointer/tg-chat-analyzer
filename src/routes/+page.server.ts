@@ -111,7 +111,7 @@ export const load: PageServerLoad = async ({ url }) => {
 				}
 			},
 			favorites: {
-				label: 'Reply favorites',
+				label: 'Reply peers',
 				leaderboardValue: favoriteSummary.repliesSent,
 				leaderboardValueLabel: 'Replies sent',
 				entries: favoriteSummary.favorites
