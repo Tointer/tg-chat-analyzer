@@ -35,6 +35,7 @@
 	const participantLineColor = $derived(activeTheme.chart.nonReplyBar);
 	const participantFillColor = $derived(withAlpha(activeTheme.chart.nonReplyBar, 0.16));
 	const activeParticipantColor = $derived(activeTheme.chart.replyBar);
+	const activeParticipantFillColor = $derived(withAlpha(activeTheme.chart.replyBar, 0.08));
 </script>
 
 <section class="mb-4 grid gap-4 pt-4 lg:grid-cols-3" aria-label="Chat summary">
@@ -75,6 +76,7 @@
 			lineColor={participantLineColor}
 			fillColor={participantFillColor}
 			overlayLineColor={activeParticipantColor}
+			overlayFillColor={activeParticipantFillColor}
 		/>
 	</article>
 </section>

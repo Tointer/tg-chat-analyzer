@@ -9,6 +9,7 @@
 		lineColor?: string;
 		fillColor?: string;
 		overlayLineColor?: string;
+		overlayFillColor?: string;
 	};
 
 	let {
@@ -17,7 +18,8 @@
 		overlayValues = [],
 		lineColor = '#0f766e',
 		fillColor = 'rgba(15, 118, 110, 0.16)',
-		overlayLineColor = '#f59e0b'
+		overlayLineColor = '#f59e0b',
+		overlayFillColor = 'rgba(245, 158, 11, 0.08)'
 	}: Props = $props();
 
 	let canvas = $state<HTMLCanvasElement | undefined>(undefined);
@@ -42,8 +44,8 @@
 					label: 'Active participants',
 					data: overlayValues,
 					borderColor: overlayLineColor,
-					backgroundColor: 'transparent',
-					fill: false,
+					backgroundColor: overlayFillColor,
+					fill: true,
 					tension: 0.35,
 					pointRadius: 0,
 					pointHoverRadius: 3,
