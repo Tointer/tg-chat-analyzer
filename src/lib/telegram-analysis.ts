@@ -7,6 +7,7 @@ import {
 } from './telegram-analysis-shared';
 import { aggregateMessagesByTimeBucket, classifyTelegramMessage } from './telegram-text-analyzer';
 import type {
+	MessageBucketsChart,
 	TelegramAnalysisOptions,
 	TelegramAnalysisReport,
 	TelegramExport
@@ -14,7 +15,9 @@ import type {
 
 export { classifyTelegramMessage };
 export type {
+	MessageBucketsChart,
 	MessageClassification,
+	TimeRangeSpec,
 	TimeBucketSpec,
 	TelegramAnalysisOptions,
 	TelegramAnalysisReport,
@@ -36,10 +39,19 @@ export function analyzeTelegramAnalyticsIndex(
 	options: TelegramAnalysisOptions = {}
 ): TelegramAnalysisReport {
 	const participantTimeline = aggregateParticipantTimeline(index);
-	const bucket = normalizeTimeBucket(options.messageBuckets);
-	const aggregatedMessageBuckets = aggregateMessagesByTimeBucket(index, bucket);
-	const visibleMessageBuckets =
-		aggregatedMessageBuckets.length > 2 ? aggregatedMessageBuckets.slice(1, -1) : [];
+	const messageBuckets = buildMessageBucketsChart(index, options);
+	const visibleMessageBuckets = messageBuckets.labels.map((label, dataIndex) => ({
+		label,
+		tooltipLabel: messageBuckets.tooltipLabels[dataIndex] ?? label,
+		otherCount: messageBuckets.otherValues[dataIndex] ?? 0,
+		lowInfoCount: messageBuckets.lowInfoValues[dataIndex] ?? 0,
+		mediaOnlyCount: messageBuckets.mediaOnlyValues[dataIndex] ?? 0
+	}));
+	const aggregatedMessageBuckets = aggregateMessagesByTimeBucket(
+		index,
+		options.messageBuckets,
+		options.timeRange
+	);
 	const totalMessages = aggregatedMessageBuckets.reduce(
 		(sum, entry) => sum + entry.otherCount + entry.lowInfoCount + entry.mediaOnlyCount,
 		0
@@ -59,8 +71,6 @@ export function analyzeTelegramAnalyticsIndex(
 		visibleMessageBuckets[0] ?? {
 			label: 'N/A',
 			tooltipLabel: 'N/A',
-			start: 'N/A',
-			end: 'N/A',
 			otherCount: 0,
 			lowInfoCount: 0,
 			mediaOnlyCount: 0
@@ -70,18 +80,7 @@ export function analyzeTelegramAnalyticsIndex(
 	return {
 		chatName: index.chatName,
 		participantTimeline,
-		messageBuckets: {
-			bucket,
-			title: getTimeBucketTitle(bucket),
-			groupingLabel: getTimeBucketGroupingLabel(bucket),
-			trimmedEdgeBucketCount:
-				aggregatedMessageBuckets.length >= 2 ? Math.min(2, aggregatedMessageBuckets.length) : 0,
-			labels: visibleMessageBuckets.map((entry) => entry.label),
-			tooltipLabels: visibleMessageBuckets.map((entry) => entry.tooltipLabel),
-			otherValues: visibleMessageBuckets.map((entry) => entry.otherCount),
-			lowInfoValues: visibleMessageBuckets.map((entry) => entry.lowInfoCount),
-			mediaOnlyValues: visibleMessageBuckets.map((entry) => entry.mediaOnlyCount)
-		},
+		messageBuckets,
 		totalMessages,
 		otherMessages,
 		lowInfoMessages,
@@ -93,8 +92,33 @@ export function analyzeTelegramAnalyticsIndex(
 			count: busiestBucket.otherCount + busiestBucket.lowInfoCount + busiestBucket.mediaOnlyCount
 		},
 		range: {
-			start: visibleMessageBuckets[0]?.start ?? 'N/A',
-			end: visibleMessageBuckets.at(-1)?.end ?? 'N/A'
+			start: aggregatedMessageBuckets[0]?.start ?? 'N/A',
+			end: aggregatedMessageBuckets.at(-1)?.end ?? 'N/A'
 		}
+	};
+}
+
+export function buildMessageBucketsChart(
+	index: AnalyticsIndex,
+	options: TelegramAnalysisOptions = {}
+): MessageBucketsChart {
+	const bucket = normalizeTimeBucket(options.messageBuckets);
+	const aggregatedMessageBuckets = aggregateMessagesByTimeBucket(
+		index,
+		bucket,
+		options.timeRange
+	);
+	const visibleMessageBuckets = aggregatedMessageBuckets;
+
+	return {
+		bucket,
+		title: getTimeBucketTitle(bucket),
+		groupingLabel: getTimeBucketGroupingLabel(bucket),
+		trimmedEdgeBucketCount: 0,
+		labels: visibleMessageBuckets.map((entry) => entry.label),
+		tooltipLabels: visibleMessageBuckets.map((entry) => entry.tooltipLabel),
+		otherValues: visibleMessageBuckets.map((entry) => entry.otherCount),
+		lowInfoValues: visibleMessageBuckets.map((entry) => entry.lowInfoCount),
+		mediaOnlyValues: visibleMessageBuckets.map((entry) => entry.mediaOnlyCount)
 	};
 }

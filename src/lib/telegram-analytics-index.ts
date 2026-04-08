@@ -1,8 +1,10 @@
 import { formatDayLabel, getChronologicalMessages } from './telegram-analysis-shared';
+import { buildMembershipIntervals, type MembershipInterval } from './telegram-membership-index';
 import { classifyTelegramMessage } from './telegram-text-analyzer';
 import type {
 	MessageBucketAggregate,
 	MessageClassification,
+	NormalizedTimeRange,
 	NormalizedTimeBucket,
 	TelegramExport,
 	TelegramExportMessage
@@ -46,6 +48,7 @@ export type AnalyticsIndex = {
 	messageById: Map<number, NormalizedTelegramMessage>;
 	messagesByUserId: Map<string, NormalizedTelegramMessage[]>;
 	messagesByDayLabel: Map<string, NormalizedTelegramMessage[]>;
+	membershipIntervalsByUserId: Map<string, MembershipInterval[]>;
 	replyEdges: ReplyEdgeSummary[];
 	bucketAggregatesByKey: Map<string, MessageBucketAggregate[]>;
 	stats: {
@@ -73,23 +76,29 @@ function extractTextContent(message: TelegramExportMessage): string {
 	return '';
 }
 
-function buildBucketKey(bucket: NormalizedTimeBucket): string {
-	return `${bucket.unit}:${bucket.size}`;
+function buildBucketKey(bucket: NormalizedTimeBucket, timeRange?: NormalizedTimeRange | null): string {
+	if (!timeRange) {
+		return `${bucket.unit}:${bucket.size}:full`;
+	}
+
+	return `${bucket.unit}:${bucket.size}:${timeRange.startTimestamp}:${timeRange.endTimestamp}`;
 }
 
 export function getBucketAggregateCache(
 	index: AnalyticsIndex,
-	bucket: NormalizedTimeBucket
+	bucket: NormalizedTimeBucket,
+	timeRange?: NormalizedTimeRange | null
 ): MessageBucketAggregate[] | undefined {
-	return index.bucketAggregatesByKey.get(buildBucketKey(bucket));
+	return index.bucketAggregatesByKey.get(buildBucketKey(bucket, timeRange));
 }
 
 export function setBucketAggregateCache(
 	index: AnalyticsIndex,
 	bucket: NormalizedTimeBucket,
+	timeRange: NormalizedTimeRange | null,
 	aggregates: MessageBucketAggregate[]
 ) {
-	index.bucketAggregatesByKey.set(buildBucketKey(bucket), aggregates);
+	index.bucketAggregatesByKey.set(buildBucketKey(bucket, timeRange), aggregates);
 }
 
 export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): AnalyticsIndex {
@@ -195,6 +204,7 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 		messageById,
 		messagesByUserId,
 		messagesByDayLabel,
+		membershipIntervalsByUserId: buildMembershipIntervals(messages),
 		replyEdges: [...replyEdgesByPairKey.values()],
 		bucketAggregatesByKey: new Map<string, MessageBucketAggregate[]>(),
 		stats: {

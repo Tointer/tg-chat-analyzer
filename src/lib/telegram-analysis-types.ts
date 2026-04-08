@@ -56,8 +56,31 @@ export type MessageBucketAggregate = {
 	mediaOnlyCount: number;
 };
 
+export type TimeRangeSpec = {
+	startTimestamp?: number;
+	endTimestamp?: number;
+};
+
+export type NormalizedTimeRange = {
+	startTimestamp: number;
+	endTimestamp: number;
+};
+
 export type TelegramAnalysisOptions = {
 	messageBuckets?: TimeBucketSpec;
+	timeRange?: TimeRangeSpec;
+};
+
+export type MessageBucketsChart = {
+	bucket: NormalizedTimeBucket;
+	title: string;
+	groupingLabel: string;
+	trimmedEdgeBucketCount: number;
+	labels: string[];
+	tooltipLabels: string[];
+	otherValues: number[];
+	lowInfoValues: number[];
+	mediaOnlyValues: number[];
 };
 
 export type TelegramAnalysisReport = {
@@ -70,17 +93,7 @@ export type TelegramAnalysisReport = {
 		currentActiveCount: number;
 		peakCount: number;
 	};
-	messageBuckets: {
-		bucket: NormalizedTimeBucket;
-		title: string;
-		groupingLabel: string;
-		trimmedEdgeBucketCount: number;
-		labels: string[];
-		tooltipLabels: string[];
-		otherValues: number[];
-		lowInfoValues: number[];
-		mediaOnlyValues: number[];
-	};
+	messageBuckets: MessageBucketsChart;
 	totalMessages: number;
 	otherMessages: number;
 	lowInfoMessages: number;

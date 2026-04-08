@@ -4,19 +4,24 @@ import {
 	type AnalyticsIndex
 } from './telegram-analytics-index';
 import {
+	addTimeBucket,
 	getTimeBucketAxisLabel,
 	getTimeBucketDateRange,
 	getMessageTimestamp,
 	getTimeBucketStart,
 	getTimeBucketTooltipLabel,
+	normalizeTimeRange,
 	normalizeTimeBucket
 } from './telegram-analysis-shared';
 import type {
 	MessageClassification,
 	MessageBucketAggregate,
+	NormalizedTimeRange,
 	TelegramExportMessage,
+	TimeRangeSpec,
 	TimeBucketSpec
 } from './telegram-analysis-types';
+import type { NormalizedTelegramMessage } from './telegram-analytics-index';
 
 const EMOJI_TEXT_DETECTION = /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u;
 const NON_EMOJI_TEXT_REMAINDER =
@@ -141,14 +146,34 @@ export function classifyTelegramMessage(message: TelegramExportMessage): Message
 
 export function aggregateMessagesByTimeBucket(
 	index: AnalyticsIndex,
-	bucket?: TimeBucketSpec
+	bucket?: TimeBucketSpec,
+	timeRange?: TimeRangeSpec
 ): MessageBucketAggregate[] {
 	const normalizedBucket = normalizeTimeBucket(bucket);
-	const cachedAggregates = getBucketAggregateCache(index, normalizedBucket);
+	const normalizedTimeRange = normalizeTimeRange(timeRange, index.stats.dateRange);
+	const cachedAggregates = getBucketAggregateCache(index, normalizedBucket, normalizedTimeRange);
 
 	if (cachedAggregates) {
 		return cachedAggregates;
 	}
+
+	const aggregates = aggregateNormalizedMessagesByTimeBucket(
+		index.messages,
+		normalizedBucket,
+		normalizedTimeRange
+	);
+
+	setBucketAggregateCache(index, normalizedBucket, normalizedTimeRange, aggregates);
+
+	return aggregates;
+}
+
+export function aggregateNormalizedMessagesByTimeBucket(
+	messages: NormalizedTelegramMessage[],
+	bucket?: TimeBucketSpec,
+	timeRange?: TimeRangeSpec | NormalizedTimeRange | null
+): MessageBucketAggregate[] {
+	const normalizedBucket = normalizeTimeBucket(bucket);
 
 	const counts = new Map<
 		string,
@@ -159,14 +184,25 @@ export function aggregateMessagesByTimeBucket(
 			mediaOnlyCount: number;
 		}
 	>();
+	let firstBucketStart: Date | null = null;
+	let lastBucketStart: Date | null = null;
 
-	for (const message of index.messages) {
+	for (const message of messages) {
 		if (message.classification === 'ignore') {
 			continue;
 		}
 
 		const bucketStart = getTimeBucketStart(message.timestamp, normalizedBucket);
 		const key = bucketStart.toISOString();
+
+		if (firstBucketStart === null || bucketStart.getTime() < firstBucketStart.getTime()) {
+			firstBucketStart = bucketStart;
+		}
+
+		if (lastBucketStart === null || bucketStart.getTime() > lastBucketStart.getTime()) {
+			lastBucketStart = bucketStart;
+		}
+
 		const bucketCounts = counts.get(key) ?? {
 			start: bucketStart,
 			otherCount: 0,
@@ -185,23 +221,44 @@ export function aggregateMessagesByTimeBucket(
 		counts.set(key, bucketCounts);
 	}
 
-	const aggregates = [...counts.entries()]
-		.sort(([left], [right]) => left.localeCompare(right))
-		.map(([, count]) => {
-			const range = getTimeBucketDateRange(count.start, normalizedBucket);
+	const fallbackRange = {
+		start: firstBucketStart?.getTime() ?? null,
+		end: lastBucketStart?.getTime() ?? null
+	};
+	const normalizedTimeRange = normalizeTimeRange(timeRange ?? undefined, fallbackRange);
 
-			return {
-				label: getTimeBucketAxisLabel(count.start, normalizedBucket),
-				tooltipLabel: getTimeBucketTooltipLabel(count.start, normalizedBucket),
-				start: range.start,
-				end: range.end,
-				otherCount: count.otherCount,
-				lowInfoCount: count.lowInfoCount,
-				mediaOnlyCount: count.mediaOnlyCount
-			};
+	if (normalizedTimeRange === null) {
+		return [];
+	}
+
+	const rangeStartBucket = getTimeBucketStart(normalizedTimeRange.startTimestamp, normalizedBucket);
+	const rangeEndBucket = getTimeBucketStart(normalizedTimeRange.endTimestamp, normalizedBucket);
+
+	const aggregates: MessageBucketAggregate[] = [];
+
+	for (
+		let bucketStart = rangeStartBucket;
+		bucketStart.getTime() <= rangeEndBucket.getTime();
+		bucketStart = addTimeBucket(bucketStart, normalizedBucket)
+	) {
+		const bucketCounts = counts.get(bucketStart.toISOString()) ?? {
+			start: bucketStart,
+			otherCount: 0,
+			lowInfoCount: 0,
+			mediaOnlyCount: 0
+		};
+		const range = getTimeBucketDateRange(bucketStart, normalizedBucket);
+
+		aggregates.push({
+			label: getTimeBucketAxisLabel(bucketStart, normalizedBucket),
+			tooltipLabel: getTimeBucketTooltipLabel(bucketStart, normalizedBucket),
+			start: range.start,
+			end: range.end,
+			otherCount: bucketCounts.otherCount,
+			lowInfoCount: bucketCounts.lowInfoCount,
+			mediaOnlyCount: bucketCounts.mediaOnlyCount
 		});
-
-	setBucketAggregateCache(index, normalizedBucket, aggregates);
+	}
 
 	return aggregates;
 }

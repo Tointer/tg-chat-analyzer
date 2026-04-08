@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { buildTelegramAnalyticsIndex } from './telegram-analytics-index';
-import type { TelegramExportMessage } from './telegram-analysis';
+import { buildTelegramAnalyticsIndex } from '../telegram-analytics-index';
+import type { TelegramExportMessage } from '../telegram-analysis';
 
 function createMessage(overrides: Partial<TelegramExportMessage> = {}): TelegramExportMessage {
 	return {

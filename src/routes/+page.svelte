@@ -7,19 +7,28 @@
 		cycleTheme,
 		getTheme,
 		MessageBucketsSection,
+		UserInfoSection,
 		themeOrder
 	} from '$lib';
-	import type { TelegramAnalysisReport } from '$lib/telegram-analysis';
+	import type { MessageBucketsChart, TelegramAnalysisReport } from '$lib/telegram-analysis';
 
 	type PeriodKey = 'day' | 'week';
 
 	type PageData = {
 		selectedPeriod: 'day' | 'week';
 		periodReports: Record<PeriodKey, TelegramAnalysisReport>;
+		userInfoCards: Array<{
+			userId: string;
+			userName: string;
+			messageCount: number;
+			messageBucketsByPeriod: Record<PeriodKey, MessageBucketsChart>;
+		}>;
 	};
 
 	let { data }: { data: PageData } = $props();
 	let selectedPeriod = $state<PeriodKey>('week');
+	let selectedUserId = $state<string | null>(null);
+	let selectedUserPeriod = $state<PeriodKey>('week');
 
 	const currentReport = $derived(data.periodReports[selectedPeriod]);
 	const themeName = fromStore(activeThemeName);
@@ -32,8 +41,18 @@
 		selectedPeriod = period;
 	}
 
+	function selectUser(userId: string) {
+		selectedUserId = userId;
+	}
+
+	function selectUserPeriod(period: PeriodKey) {
+		selectedUserPeriod = period;
+	}
+
 	$effect(() => {
 		selectedPeriod = data.selectedPeriod;
+		selectedUserId = data.userInfoCards[0]?.userId ?? null;
+		selectedUserPeriod = 'week';
 	});
 </script>
 
@@ -61,5 +80,14 @@
 		activeTheme={activeTheme}
 		selectedPeriod={selectedPeriod}
 		onSelectPeriod={selectPeriod}
+	/>
+
+	<UserInfoSection
+		users={data.userInfoCards}
+		selectedUserId={selectedUserId}
+		selectedPeriod={selectedUserPeriod}
+		{activeTheme}
+		onSelectUser={selectUser}
+		onSelectPeriod={selectUserPeriod}
 	/>
 </div>

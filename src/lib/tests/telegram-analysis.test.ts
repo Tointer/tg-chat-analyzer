@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD } from './telegram-analysis-config';
+import { ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD } from '../telegram-analysis-config';
 import {
 	analyzeTelegramExport,
 	classifyTelegramMessage,
 	type TelegramExportMessage
-} from './telegram-analysis';
+} from '../telegram-analysis';
 
 function createMessage(overrides: Partial<TelegramExportMessage> = {}): TelegramExportMessage {
 	return {
@@ -92,7 +92,7 @@ describe('classifyTelegramMessage', () => {
 });
 
 describe('analyzeTelegramExport', () => {
-	test('excludes incomplete first and last day buckets from the chart series', () => {
+	test('keeps first and last day buckets in the chart series', () => {
 		const report = analyzeTelegramExport({
 			name: 'Test chat',
 			messages: [
@@ -113,30 +113,32 @@ describe('analyzeTelegramExport', () => {
 		assert.equal(report.chatName, 'Test chat');
 		assert.equal(report.messageBuckets.title, 'Messages per day');
 		assert.equal(report.messageBuckets.groupingLabel, 'day');
-		assert.equal(report.messageBuckets.trimmedEdgeBucketCount, 2);
-		assert.deepEqual(report.messageBuckets.labels, ['2025-12-14', '2025-12-15', '2025-12-16']);
+		assert.equal(report.messageBuckets.trimmedEdgeBucketCount, 0);
+		assert.deepEqual(report.messageBuckets.labels, ['2025-12-13', '2025-12-14', '2025-12-15', '2025-12-16', '2025-12-17']);
 		assert.deepEqual(report.messageBuckets.tooltipLabels, [
+			'Day 2025-12-13',
 			'Day 2025-12-14',
 			'Day 2025-12-15',
-			'Day 2025-12-16'
+			'Day 2025-12-16',
+			'Day 2025-12-17'
 		]);
-		assert.deepEqual(report.messageBuckets.otherValues, [1, 0, 1]);
-		assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 1, 0]);
-		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 1, 0]);
+		assert.deepEqual(report.messageBuckets.otherValues, [1, 1, 0, 1, 1]);
+		assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 0, 1, 0, 0]);
+		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 0, 1, 0, 0]);
 		assert.equal(report.totalMessages, 6);
 		assert.equal(report.otherMessages, 4);
 		assert.equal(report.lowInfoMessages, 1);
 		assert.equal(report.mediaOnlyMessages, 1);
-		assert.equal(report.bucketCount, 3);
+		assert.equal(report.bucketCount, 5);
 		assert.deepEqual(report.busiestBucket, {
 			label: '2025-12-15',
 			tooltipLabel: 'Day 2025-12-15',
 			count: 2
 		});
-		assert.deepEqual(report.range, { start: '2025-12-14', end: '2025-12-16' });
+		assert.deepEqual(report.range, { start: '2025-12-13', end: '2025-12-17' });
 	});
 
-	test('excludes incomplete edge buckets from multi-day chart series', () => {
+	test('keeps edge buckets in multi-day chart series', () => {
 		const report = analyzeTelegramExport(
 			{
 				name: '3-day bucket chat',
@@ -157,19 +159,21 @@ describe('analyzeTelegramExport', () => {
 
 		assert.equal(report.messageBuckets.title, 'Messages per 3 days');
 		assert.equal(report.messageBuckets.groupingLabel, '3 days');
-		assert.equal(report.messageBuckets.trimmedEdgeBucketCount, 2);
-		assert.deepEqual(report.messageBuckets.labels, ['2025-12-14', '2025-12-17']);
+		assert.equal(report.messageBuckets.trimmedEdgeBucketCount, 0);
+		assert.deepEqual(report.messageBuckets.labels, ['2025-12-11', '2025-12-14', '2025-12-17', '2025-12-20']);
 		assert.deepEqual(report.messageBuckets.tooltipLabels, [
+			'3 days: 2025-12-11 to 2025-12-13',
 			'3 days: 2025-12-14 to 2025-12-16',
-			'3 days: 2025-12-17 to 2025-12-19'
+			'3 days: 2025-12-17 to 2025-12-19',
+			'3 days: 2025-12-20 to 2025-12-22'
 		]);
-		assert.deepEqual(report.messageBuckets.otherValues, [0, 0]);
-		assert.deepEqual(report.messageBuckets.lowInfoValues, [2, 1]);
-		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [1, 0]);
-		assert.deepEqual(report.range, { start: '2025-12-14', end: '2025-12-19' });
+		assert.deepEqual(report.messageBuckets.otherValues, [1, 0, 0, 1]);
+		assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 2, 1, 1]);
+		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 1, 0, 0]);
+		assert.deepEqual(report.range, { start: '2025-12-11', end: '2025-12-22' });
 	});
 
-	test('excludes incomplete edge buckets from monthly chart series', () => {
+	test('keeps edge buckets in monthly chart series', () => {
 		const report = analyzeTelegramExport(
 			{
 				name: 'Monthly chat',
@@ -189,17 +193,19 @@ describe('analyzeTelegramExport', () => {
 
 		assert.equal(report.messageBuckets.title, 'Messages per month');
 		assert.equal(report.messageBuckets.groupingLabel, 'month');
-		assert.equal(report.messageBuckets.trimmedEdgeBucketCount, 2);
-		assert.deepEqual(report.messageBuckets.labels, ['2025-12', '2026-01', '2026-02']);
+		assert.equal(report.messageBuckets.trimmedEdgeBucketCount, 0);
+		assert.deepEqual(report.messageBuckets.labels, ['2025-11', '2025-12', '2026-01', '2026-02', '2026-03']);
 		assert.deepEqual(report.messageBuckets.tooltipLabels, [
+			'Month 2025-11',
 			'Month 2025-12',
 			'Month 2026-01',
-			'Month 2026-02'
+			'Month 2026-02',
+			'Month 2026-03'
 		]);
-		assert.deepEqual(report.messageBuckets.otherValues, [0, 0, 0]);
-		assert.deepEqual(report.messageBuckets.lowInfoValues, [1, 1, 1]);
-		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [1, 0, 0]);
-		assert.deepEqual(report.range, { start: '2025-12-01', end: '2026-02-28' });
+		assert.deepEqual(report.messageBuckets.otherValues, [1, 0, 0, 0, 1]);
+		assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 1, 1, 1, 0]);
+		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 1, 0, 0, 0]);
+		assert.deepEqual(report.range, { start: '2025-11-01', end: '2026-03-31' });
 	});
 
 	test('aggregates messages by week for the chart when requested', () => {
@@ -222,18 +228,68 @@ describe('analyzeTelegramExport', () => {
 
 		assert.equal(report.messageBuckets.title, 'Messages per week');
 		assert.equal(report.messageBuckets.groupingLabel, 'week');
-		assert.equal(report.messageBuckets.trimmedEdgeBucketCount, 2);
-		assert.deepEqual(report.messageBuckets.labels, ['2025-12-08', '2025-12-15', '2025-12-22']);
+		assert.equal(report.messageBuckets.trimmedEdgeBucketCount, 0);
+			assert.deepEqual(report.messageBuckets.labels, ['2025-11-24', '2025-12-01', '2025-12-08', '2025-12-15', '2025-12-22', '2025-12-29']);
 		assert.deepEqual(report.messageBuckets.tooltipLabels, [
+			'Week of 2025-11-24',
+				'Week of 2025-12-01',
 			'Week of 2025-12-08',
 			'Week of 2025-12-15',
-			'Week of 2025-12-22'
+			'Week of 2025-12-22',
+			'Week of 2025-12-29'
 		]);
-		assert.deepEqual(report.messageBuckets.otherValues, [0, 0, 0]);
-		assert.deepEqual(report.messageBuckets.lowInfoValues, [1, 1, 1]);
-		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [1, 0, 0]);
-		assert.deepEqual(report.range, { start: '2025-12-08', end: '2025-12-28' });
+			assert.deepEqual(report.messageBuckets.otherValues, [1, 0, 0, 0, 0, 1]);
+			assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 0, 1, 1, 1, 0]);
+			assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 0, 1, 0, 0, 0]);
+		assert.deepEqual(report.range, { start: '2025-11-24', end: '2026-01-04' });
 	});
+
+		test('fills missing day buckets with zero values inside the covered range', () => {
+			const report = analyzeTelegramExport({
+				name: 'Sparse day chat',
+				messages: [
+					createMessage({ date: '2025-12-14T09:00:00', date_unixtime: '1765702800', text: 'first' }),
+					createMessage({ date: '2025-12-16T09:00:00', date_unixtime: '1765875600', photo: 'photo.jpg' })
+				]
+			});
+
+			assert.deepEqual(report.messageBuckets.labels, ['2025-12-14', '2025-12-15', '2025-12-16']);
+			assert.deepEqual(report.messageBuckets.otherValues, [1, 0, 0]);
+			assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 0, 0]);
+			assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 0, 1]);
+			assert.deepEqual(report.range, { start: '2025-12-14', end: '2025-12-16' });
+		});
+
+		test('fills leading and trailing buckets with zero values when an explicit time range is provided', () => {
+			const report = analyzeTelegramExport(
+				{
+					name: 'Ranged chat',
+					messages: [
+						createMessage({ date: '2025-12-14T09:00:00', date_unixtime: '1765702800', text: 'first' }),
+						createMessage({ date: '2025-12-16T09:00:00', date_unixtime: '1765875600', photo: 'photo.jpg' })
+					]
+				},
+				{
+					messageBuckets: { unit: 'day', size: 1 },
+					timeRange: {
+						startTimestamp: Date.parse('2025-12-13T00:00:00Z'),
+						endTimestamp: Date.parse('2025-12-17T23:59:59Z')
+					}
+				}
+			);
+
+			assert.deepEqual(report.messageBuckets.labels, [
+				'2025-12-13',
+				'2025-12-14',
+				'2025-12-15',
+				'2025-12-16',
+				'2025-12-17'
+			]);
+			assert.deepEqual(report.messageBuckets.otherValues, [0, 1, 0, 0, 0]);
+			assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 0, 0, 0, 0]);
+			assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 0, 0, 1, 0]);
+			assert.deepEqual(report.range, { start: '2025-12-13', end: '2025-12-17' });
+		});
 
 	test('separates low-info, media-only, and other messages in chart buckets', () => {
 		const report = analyzeTelegramExport({
@@ -262,10 +318,10 @@ describe('analyzeTelegramExport', () => {
 			]
 		});
 
-		assert.deepEqual(report.messageBuckets.labels, ['2025-12-14']);
-		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [1]);
-		assert.deepEqual(report.messageBuckets.lowInfoValues, [1]);
-		assert.deepEqual(report.messageBuckets.otherValues, [2]);
+		assert.deepEqual(report.messageBuckets.labels, ['2025-12-13', '2025-12-14', '2025-12-15']);
+		assert.deepEqual(report.messageBuckets.mediaOnlyValues, [0, 1, 0]);
+		assert.deepEqual(report.messageBuckets.lowInfoValues, [0, 1, 0]);
+		assert.deepEqual(report.messageBuckets.otherValues, [1, 2, 1]);
 		assert.equal(report.mediaOnlyMessages, 1);
 		assert.equal(report.lowInfoMessages, 1);
 		assert.equal(report.otherMessages, 4);

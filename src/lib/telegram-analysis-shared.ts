@@ -1,6 +1,8 @@
 import type {
+	NormalizedTimeRange,
 	NormalizedTimeBucket,
 	TelegramExportMessage,
+	TimeRangeSpec,
 	TimeBucketSpec
 } from './telegram-analysis-types';
 
@@ -58,6 +60,33 @@ export function normalizeTimeBucket(bucket?: TimeBucketSpec): NormalizedTimeBuck
 	return {
 		unit: bucket?.unit ?? 'day',
 		size: normalizedSize
+	};
+}
+
+export function normalizeTimeRange(
+	range: TimeRangeSpec | undefined,
+	fallback: { start: number | null; end: number | null }
+): NormalizedTimeRange | null {
+	const requestedStart = range?.startTimestamp;
+	const requestedEnd = range?.endTimestamp;
+	const fallbackStart = fallback.start;
+	const fallbackEnd = fallback.end;
+	const startTimestamp =
+		typeof requestedStart === 'number' && Number.isFinite(requestedStart)
+			? requestedStart
+			: fallbackStart;
+	const endTimestamp =
+		typeof requestedEnd === 'number' && Number.isFinite(requestedEnd)
+			? requestedEnd
+			: fallbackEnd;
+
+	if (startTimestamp === null || endTimestamp === null) {
+		return null;
+	}
+
+	return {
+		startTimestamp: Math.min(startTimestamp, endTimestamp),
+		endTimestamp: Math.max(startTimestamp, endTimestamp)
 	};
 }
 
