@@ -1,15 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import ChartJS from 'chart.js/auto';
-	import type { Chart } from 'chart.js';
+	import type { BorderRadius, Chart, ScriptableContext } from 'chart.js';
 
 	type WeeklyChartData = {
 		chatName: string;
 		weeklyMessages: {
 			labels: string[];
-			values: number[];
+			textValues: number[];
+			mediaOnlyValues: number[];
 		};
 		totalMessages: number;
+		textMessages: number;
+		mediaOnlyMessages: number;
 		weekCount: number;
 		busiestWeek: {
 			label: string;
@@ -26,6 +29,23 @@
 	let canvas: HTMLCanvasElement;
 	let chart: Chart | undefined;
 
+	function getTopOnlyRadius(shouldRoundTop: boolean): BorderRadius {
+		return shouldRoundTop
+			? { topLeft: 10, topRight: 10, bottomLeft: 0, bottomRight: 0 }
+			: { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 };
+	}
+
+	function getTextBorderRadius(context: ScriptableContext<'bar'>): BorderRadius {
+		const value = data.weeklyMessages.textValues[context.dataIndex] ?? 0;
+		return getTopOnlyRadius(value > 0);
+	}
+
+	function getMediaBorderRadius(context: ScriptableContext<'bar'>): BorderRadius {
+		const mediaValue = data.weeklyMessages.mediaOnlyValues[context.dataIndex] ?? 0;
+		const textValue = data.weeklyMessages.textValues[context.dataIndex] ?? 0;
+		return getTopOnlyRadius(mediaValue > 0 && textValue === 0);
+	}
+
 	onMount(() => {
 		chart = new ChartJS(canvas, {
 			type: 'bar',
@@ -33,12 +53,23 @@
 				labels: data.weeklyMessages.labels,
 				datasets: [
 					{
-						label: 'Messages',
-						data: data.weeklyMessages.values,
+						label: 'Media only',
+						data: data.weeklyMessages.mediaOnlyValues,
+						backgroundColor: '#f59e0b',
+						hoverBackgroundColor: '#d97706',
+						borderRadius: getMediaBorderRadius,
+						borderSkipped: false,
+						stack: 'messages',
+						maxBarThickness: 28
+					},
+					{
+						label: 'With text',
+						data: data.weeklyMessages.textValues,
 						backgroundColor: '#0f766e',
 						hoverBackgroundColor: '#115e59',
-						borderRadius: 10,
+						borderRadius: getTextBorderRadius,
 						borderSkipped: false,
+						stack: 'messages',
 						maxBarThickness: 28
 					}
 				]
@@ -46,9 +77,21 @@
 			options: {
 				responsive: true,
 				maintainAspectRatio: false,
+				interaction: {
+					mode: 'index',
+					intersect: false
+				},
 				plugins: {
 					legend: {
-						display: false
+						display: true,
+						position: 'top',
+						labels: {
+							color: '#27272a',
+							usePointStyle: true,
+							pointStyle: 'rectRounded',
+							boxWidth: 12,
+							padding: 18
+						}
 					},
 					tooltip: {
 						displayColors: false,
@@ -56,12 +99,17 @@
 							title(items) {
 								const [item] = items;
 								return item?.label ? `Week of ${item.label}` : '';
+							},
+							footer(items) {
+								const total = items.reduce((sum, item) => sum + (item.parsed.y ?? 0), 0);
+								return `Total: ${total}`;
 							}
 						}
 					}
 				},
 				scales: {
 					x: {
+						stacked: true,
 						grid: {
 							display: false
 						},
@@ -73,6 +121,7 @@
 						}
 					},
 					y: {
+						stacked: true,
 						beginAtZero: true,
 						ticks: {
 							precision: 0,
@@ -118,12 +167,16 @@
 
 	<section class="stats-grid" aria-label="Chat summary">
 		<article class="stat-card">
-			<p>Total messages</p>
+			<p>Total classified messages</p>
 			<strong>{data.totalMessages.toLocaleString()}</strong>
 		</article>
 		<article class="stat-card">
-			<p>Tracked weeks</p>
-			<strong>{data.weekCount}</strong>
+			<p>Messages with text</p>
+			<strong>{data.textMessages.toLocaleString()}</strong>
+		</article>
+		<article class="stat-card">
+			<p>Media-only messages</p>
+			<strong>{data.mediaOnlyMessages.toLocaleString()}</strong>
 		</article>
 		<article class="stat-card accent">
 			<p>Busiest week</p>
@@ -138,7 +191,9 @@
 				<p class="eyebrow">Chart</p>
 				<h2>Messages per week</h2>
 			</div>
-			<p class="chart-caption">Bars are grouped by ISO week, starting on Monday.</p>
+			<p class="chart-caption">
+				Stacked by text vs media-only messages. {data.weekCount} ISO weeks, starting on Monday.
+			</p>
 		</div>
 
 		<div class="chart-frame">
@@ -226,7 +281,7 @@
 
 	.stats-grid {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(4, minmax(0, 1fr));
 		gap: 1rem;
 		margin-bottom: 1rem;
 	}
