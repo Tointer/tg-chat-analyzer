@@ -202,12 +202,8 @@
 <div class="page-shell">
 	<section class="hero">
 		<div>
-			<p class="eyebrow">Telegram Chat Analyzer</p>
+			<p class="eyebrow">Chat Stats</p>
 			<h1>{currentReport.chatName}</h1>
-			<p class="lede">
-				Message volume grouped by {currentReport.messageBuckets.groupingLabel}. Service events are excluded.
-			</p>
-			<p class="chart-note">The first and last periods are omitted from the chart because they are incomplete.</p>
 		</div>
 	</section>
 
