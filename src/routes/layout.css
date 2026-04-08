@@ -18,6 +18,7 @@
 	--color-app-highlight: var(--app-highlight);
 	--color-app-surface: var(--app-surface);
 	--color-app-surface-alt: var(--app-surface-alt);
+	--color-app-surface-strong: var(--app-surface-strong);
 	--color-app-border: var(--app-border);
 	--color-app-empty: var(--app-empty);
 	--shadow-app-card: var(--app-card-shadow);
@@ -47,6 +48,7 @@
 	--app-highlight: #fbbf24;
 	--app-surface: rgba(28, 21, 16, 0.82);
 	--app-surface-alt: rgba(52, 38, 29, 0.56);
+	--app-surface-strong: rgba(22, 16, 12, 0.9);
 	--app-border: rgba(251, 146, 60, 0.2);
 	--app-empty: rgba(28, 21, 16, 0.48);
 	--app-card-shadow: 0 24px 60px rgba(10, 6, 4, 0.5);
@@ -68,6 +70,7 @@
 	--app-highlight: #f59e0b;
 	--app-surface: rgba(255, 255, 255, 0.82);
 	--app-surface-alt: rgba(15, 23, 42, 0.05);
+	--app-surface-strong: rgba(15, 23, 42, 0.1);
 	--app-border: rgba(15, 118, 110, 0.12);
 	--app-empty: rgba(255, 255, 255, 0.4);
 	--app-card-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);

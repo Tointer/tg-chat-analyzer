@@ -143,19 +143,21 @@
 					onscroll={updateScrollFades}
 				>
 				<div class="space-y-2">
-					{#each sortedUsers as user}
+					{#each sortedUsers as user, index}
 						<button
 							type="button"
-							class={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition-colors ${selectedUser?.userId === user.userId ? 'bg-app-accent-strong text-app-accent-contrast shadow-app-button' : 'bg-app-surface hover:bg-app-empty text-app-text'}`}
+							class={`flex w-full items-stretch gap-3 rounded-2xl pr-4 text-left transition-colors ${selectedUser?.userId === user.userId ? 'bg-app-accent-strong text-app-accent-contrast shadow-app-button' : 'bg-app-surface hover:bg-app-empty text-app-text'}`}
 							onclick={() => onSelectUser(user.userId)}
 						>
-							<span class="min-w-0 pr-3">
-								<span class="block truncate text-sm font-semibold sm:text-base">{user.userName}</span>
-								<span class={`block text-xs uppercase tracking-wide ${selectedUser?.userId === user.userId ? 'text-app-accent-contrast/80' : 'text-app-muted'}`}>
-									{user.metrics[selectedMetric].label}
-								</span>
+							<span class={`flex min-w-14 shrink-0 items-center justify-center rounded-l-2xl px-3 text-xl font-display ${selectedUser?.userId === user.userId ? 'bg-app-accent-contrast/18 text-app-accent-contrast' : 'bg-app-surface-strong text-app-text'}`}>
+								{index + 1}
 							</span>
-							<strong class="shrink-0 text-lg font-display">{user.metrics[selectedMetric].totalValue}</strong>
+							<span class="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 pl-0">
+								<span class="min-w-0 pr-3">
+								<span class="block truncate text-sm font-semibold sm:text-base">{user.userName}</span>
+							</span>
+								<strong class="shrink-0 text-lg font-display">{user.metrics[selectedMetric].totalValue}</strong>
+							</span>
 						</button>
 					{/each}
 				</div>
