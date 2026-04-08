@@ -1,3 +1,4 @@
+import { ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD } from './telegram-analysis-config';
 import { getDayEndTimestamp, type ChronologicalMessage } from './telegram-analysis-shared';
 
 type ResolvedParticipant = {
@@ -93,7 +94,7 @@ export function aggregateActiveParticipantCounts(
 		let activeCount = 0;
 
 		for (const count of perUserCounts.values()) {
-			if (count >= 10) {
+			if (count >= ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD) {
 				activeCount += 1;
 			}
 		}

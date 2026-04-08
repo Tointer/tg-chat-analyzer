@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
+import { ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD } from './telegram-analysis-config';
 import {
 	analyzeTelegramExport,
 	classifyTelegramMessage,
@@ -326,49 +327,27 @@ describe('analyzeTelegramExport', () => {
 	});
 
 	test('counts active participants in a rolling 30-day window', () => {
+		const aliceMessagesWithinWindow = Array.from(
+			{ length: ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD },
+			(_, index) =>
+				createMessage({
+					from: 'Alice',
+					from_id: 'user1',
+					date: `2025-12-${String(index + 1).padStart(2, '0')}T09:00:00`,
+					date_unixtime: String(1764579600 + index * 24 * 60 * 60),
+					text: String(index + 1)
+				})
+		);
+
 		const report = analyzeTelegramExport({
 			name: 'Active window chat',
 			messages: [
-				createMessage({
-					from: 'Alice',
-					from_id: 'user1',
-					date: '2025-12-01T09:00:00',
-					date_unixtime: '1764579600',
-					text: '1'
-				}),
-				createMessage({
-					from: 'Alice',
-					from_id: 'user1',
-					date: '2025-12-05T09:00:00',
-					date_unixtime: '1764925200',
-					text: '2'
-				}),
-				createMessage({
-					from: 'Alice',
-					from_id: 'user1',
-					date: '2025-12-10T09:00:00',
-					date_unixtime: '1765357200',
-					text: '3'
-				}),
-				createMessage({
-					from: 'Alice',
-					from_id: 'user1',
-					date: '2025-12-15T09:00:00',
-					date_unixtime: '1765789200',
-					text: '4'
-				}),
-				createMessage({
-					from: 'Alice',
-					from_id: 'user1',
-					date: '2025-12-20T09:00:00',
-					date_unixtime: '1766221200',
-					text: '5'
-				}),
+				...aliceMessagesWithinWindow,
 				createMessage({
 					from: 'Bob',
 					from_id: 'user2',
-					date: '2025-12-20T10:00:00',
-					date_unixtime: '1766224800',
+					date: '2025-12-10T10:00:00',
+					date_unixtime: '1765360800',
 					text: 'hi'
 				}),
 				createMessage({
@@ -376,16 +355,16 @@ describe('analyzeTelegramExport', () => {
 					from_id: 'user1',
 					date: '2026-01-10T09:00:00',
 					date_unixtime: '1768035600',
-					text: '6'
+					text: String(ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD + 1)
 				})
 			]
 		});
 
 		assert.deepEqual(
 			report.participantTimeline.labels,
-			['2025-12-01', '2025-12-05', '2025-12-10', '2025-12-15', '2025-12-20', '2026-01-10']
+			['2025-12-01', '2025-12-02', '2025-12-03', '2025-12-04', '2025-12-05', '2025-12-06', '2025-12-07', '2025-12-08', '2025-12-09', '2025-12-10', '2026-01-10']
 		);
-		assert.deepEqual(report.participantTimeline.activeValues, [0, 0, 0, 0, 1, 0]);
+		assert.deepEqual(report.participantTimeline.activeValues, [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
 		assert.equal(report.participantTimeline.currentActiveCount, 0);
 	});
 });
