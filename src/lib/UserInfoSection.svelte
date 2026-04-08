@@ -24,6 +24,9 @@
 
 	let { users, selectedUserId, selectedPeriod, activeTheme, onSelectUser, onSelectPeriod }: Props =
 		$props();
+	let scrollViewport = $state<HTMLDivElement | undefined>(undefined);
+	let showTopFade = $state(false);
+	let showBottomFade = $state(false);
 
 	const selectedUser = $derived(
 		users.find((user) => user.userId === selectedUserId) ?? users[0] ?? null
@@ -31,6 +34,47 @@
 	const selectedMessageBuckets = $derived(
 		selectedUser?.messageBucketsByPeriod[selectedPeriod] ?? null
 	);
+
+	function updateScrollFades() {
+		if (!scrollViewport) {
+			showTopFade = false;
+			showBottomFade = false;
+			return;
+		}
+
+		const { scrollTop, scrollHeight, clientHeight } = scrollViewport;
+		const maxScrollTop = Math.max(0, scrollHeight - clientHeight);
+		const hasOverflow = maxScrollTop > 1;
+
+		showTopFade = hasOverflow && scrollTop > 1;
+		showBottomFade = hasOverflow && scrollTop < maxScrollTop - 1;
+	}
+
+	$effect(() => {
+		if (!scrollViewport) {
+			return;
+		}
+
+		updateScrollFades();
+
+		const resizeObserver = new ResizeObserver(() => {
+			updateScrollFades();
+		});
+
+		resizeObserver.observe(scrollViewport);
+
+		return () => {
+			resizeObserver.disconnect();
+		};
+	});
+
+	$effect(() => {
+		users;
+		selectedUserId;
+		queueMicrotask(() => {
+			updateScrollFades();
+		});
+	});
 </script>
 
 <section
@@ -44,7 +88,14 @@
 
 	<div class="grid min-h-0 flex-1 auto-rows-fr gap-4 lg:grid-cols-3 lg:gap-6">
 		<div class="flex min-h-0 flex-col rounded-3xl border border-app-border bg-app-surface-alt p-3 lg:min-h-0">
-			<div class="min-h-0 flex-1 overflow-y-auto pr-1">
+			<div class="relative min-h-0 flex-1 overflow-hidden rounded-2xl">
+				<div class={`pointer-events-none absolute inset-x-0 top-0 z-10 h-8 bg-gradient-to-b from-app-surface-alt to-transparent transition-opacity duration-200 ${showTopFade ? 'opacity-100' : 'opacity-0'}`}></div>
+				<div class={`pointer-events-none absolute inset-x-0 bottom-0 z-10 h-8 bg-gradient-to-t from-app-surface-alt to-transparent transition-opacity duration-200 ${showBottomFade ? 'opacity-100' : 'opacity-0'}`}></div>
+				<div
+					bind:this={scrollViewport}
+					class="user-list-scroll min-h-0 h-full overflow-y-auto pr-1"
+					onscroll={updateScrollFades}
+				>
 				<div class="space-y-2">
 					{#each users as user}
 						<button
@@ -61,6 +112,7 @@
 							<strong class="shrink-0 text-lg font-display">{user.messageCount}</strong>
 						</button>
 					{/each}
+				</div>
 				</div>
 			</div>
 		</div>
@@ -103,3 +155,35 @@
 		</div>
 	</div>
 </section>
+
+<style>
+	.user-list-scroll {
+		scrollbar-width: thin;
+		scrollbar-color: var(--app-accent) transparent;
+	}
+
+	.user-list-scroll::-webkit-scrollbar {
+		width: 0.7rem;
+	}
+
+	.user-list-scroll::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.user-list-scroll::-webkit-scrollbar-thumb {
+		background: color-mix(in srgb, var(--app-accent) 68%, transparent);
+		border: 0.18rem solid transparent;
+		border-radius: 9999px;
+		background-clip: padding-box;
+	}
+
+	.user-list-scroll::-webkit-scrollbar-thumb:hover {
+		background: color-mix(in srgb, var(--app-accent) 82%, transparent);
+		border: 0.18rem solid transparent;
+		background-clip: padding-box;
+	}
+
+	.user-list-scroll::-webkit-scrollbar-corner {
+		background: transparent;
+	}
+</style>
