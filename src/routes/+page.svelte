@@ -94,7 +94,7 @@
 	/>
 </svelte:head>
 
-<div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+<div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
 	<ChatPageHeader
 		chatName={currentReport.chatName}
 		activeThemeLabel={activeTheme.label}

@@ -39,7 +39,7 @@
 </script>
 
 <article class="surface-card p-5 sm:p-6">
-	<div class="flex items-end gap-2 border-b border-app-border pb-3 sm:gap-3">
+	<div class="flex items-end gap-2 pb-3 sm:gap-3">
 		<strong class="block text-3xl leading-none font-display sm:text-4xl">
 			<AnimatedNumber value={report.totalMessages} />
 		</strong>
@@ -47,7 +47,7 @@
 	</div>
 	<div class="mt-3 grid grid-cols-2 gap-3 text-app-muted">
 		{#each summaryItems as item (item.label)}
-			<div class="rounded-2xl border border-app-border bg-app-surface-alt px-3 py-3 sm:px-4 sm:py-4">
+			<div class="rounded-2xl  bg-app-surface-alt px-3 py-3 sm:px-4 sm:py-4">
 				<b class="block text-xl leading-none font-semibold text-app-text font-display sm:text-xl lg:text-2xl">
 					{#if item.animated}
 						<AnimatedNumber value={item.value as number} duration={700} />
