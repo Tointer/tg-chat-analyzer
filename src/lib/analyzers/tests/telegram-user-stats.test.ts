@@ -94,6 +94,11 @@ describe('getTelegramUserStats', () => {
 			userId: 'user1',
 			userName: 'Alice',
 			totalMessages: 4,
+			totalMediaMessages: 2,
+			imageMessages: 1,
+			videoMessages: 0,
+			gifMessages: 0,
+			stickerMessages: 1,
 			otherMessages: 2,
 			lowInfoMessages: 1,
 			mediaOnlyMessages: 1,
@@ -111,6 +116,11 @@ describe('getTelegramUserStats', () => {
 			userId: 'user2',
 			userName: 'Bob',
 			totalMessages: 2,
+			totalMediaMessages: 0,
+			imageMessages: 0,
+			videoMessages: 0,
+			gifMessages: 0,
+			stickerMessages: 0,
 			otherMessages: 1,
 			lowInfoMessages: 1,
 			mediaOnlyMessages: 0,
@@ -195,6 +205,11 @@ describe('getTelegramUserStats', () => {
 			userId: 'user1',
 			userName: 'Alice',
 			totalMessages: 2,
+			totalMediaMessages: 0,
+			imageMessages: 0,
+			videoMessages: 0,
+			gifMessages: 0,
+			stickerMessages: 0,
 			otherMessages: 2,
 			lowInfoMessages: 0,
 			mediaOnlyMessages: 0,
@@ -237,7 +252,79 @@ describe('getTelegramUserStats', () => {
 		const aliceStats = getTelegramUserStatsById(index, 'user1');
 
 		assert.equal(aliceStats?.totalMessages, 2);
+		assert.equal(aliceStats?.totalMediaMessages, 0);
 		assert.equal(aliceStats?.totalTextLength, 'written here'.length);
 		assert.equal(aliceStats?.averageTextLength, 'written here'.length / 2);
+	});
+
+	test('counts supported media groups even when messages include captions', () => {
+		const index = buildTelegramAnalyticsIndex({
+			name: 'Media stats chat',
+			messages: [
+				createMessage({
+					id: 1,
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-14T10:00:00',
+					date_unixtime: '1765706400',
+					photo: 'photo.jpg',
+					text: 'caption'
+				}),
+				createMessage({
+					id: 2,
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-14T10:05:00',
+					date_unixtime: '1765706700',
+					file: 'clip.mp4',
+					media_type: 'video',
+					mime_type: 'video/mp4',
+					text: 'clip'
+				}),
+				createMessage({
+					id: 3,
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-14T10:10:00',
+					date_unixtime: '1765707000',
+					file: 'loop.gif',
+					media_type: 'animation',
+					mime_type: 'image/gif'
+				}),
+				createMessage({
+					id: 4,
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-14T10:15:00',
+					date_unixtime: '1765707300',
+					file: 'sticker.webp',
+					media_type: 'sticker',
+					mime_type: 'image/webp',
+					sticker_emoji: '😄'
+				})
+			]
+		});
+
+		assert.deepEqual(getTelegramUserStatsById(index, 'user1'), {
+			userId: 'user1',
+			userName: 'Alice',
+			totalMessages: 4,
+			totalMediaMessages: 4,
+			imageMessages: 1,
+			videoMessages: 1,
+			gifMessages: 1,
+			stickerMessages: 1,
+			otherMessages: 2,
+			lowInfoMessages: 1,
+			mediaOnlyMessages: 1,
+			activeDayCount: 1,
+			firstMessageTimestamp: 1765706400000,
+			lastMessageTimestamp: 1765707300000,
+			totalTextLength: 'caption'.length + 'clip'.length,
+			averageTextLength: ('caption'.length + 'clip'.length) / 4,
+			repliesSent: 0,
+			repliesReceived: 0,
+			averageReplyLatencyMs: null
+		});
 	});
 });

@@ -12,6 +12,14 @@ export type AppTheme = {
 		replyBarHover: string;
 		nonReplyBar: string;
 		nonReplyBarHover: string;
+		imageBar: string;
+		imageBarHover: string;
+		videoBar: string;
+		videoBarHover: string;
+		gifBar: string;
+		gifBarHover: string;
+		stickerBar: string;
+		stickerBarHover: string;
 		legendText: string;
 		axisText: string;
 		grid: string;
@@ -33,6 +41,14 @@ export const appThemes = {
 			replyBarHover: '#b08968',
 			nonReplyBar: '#f97316',
 			nonReplyBarHover: '#fb923c',
+			imageBar: '#d97706',
+			imageBarHover: '#f59e0b',
+			videoBar: '#7c3aed',
+			videoBarHover: '#8b5cf6',
+			gifBar: '#0f766e',
+			gifBarHover: '#14b8a6',
+			stickerBar: '#db2777',
+			stickerBarHover: '#ec4899',
 			legendText: '#f6ede2',
 			axisText: '#cbb8a5',
 			grid: 'rgba(203, 184, 165, 0.12)',
@@ -52,6 +68,14 @@ export const appThemes = {
 			replyBarHover: '#3f8754',
 			nonReplyBar: '#9fd8a8',
 			nonReplyBarHover: '#88c993',
+			imageBar: '#f59e0b',
+			imageBarHover: '#fbbf24',
+			videoBar: '#6366f1',
+			videoBarHover: '#818cf8',
+			gifBar: '#0f766e',
+			gifBarHover: '#14b8a6',
+			stickerBar: '#ec4899',
+			stickerBarHover: '#f472b6',
 			legendText: '#27272a',
 			axisText: '#3f3f46',
 			grid: 'rgba(15, 23, 42, 0.08)',

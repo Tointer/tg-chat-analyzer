@@ -33,6 +33,7 @@
 	const metricOptions = [
 		{ value: 'messages', label: 'Message Count' },
 		{ value: 'characters', label: 'Characters Count' },
+		{ value: 'media', label: 'Media sent' },
 		{ value: 'favorites', label: 'Reply Peers' }
 	];
 	const isFavoriteView = $derived(selectedMetric === 'favorites');
@@ -89,22 +90,23 @@
 	aria-label="User information"
 >
 	<div class="mb-4 shrink-0">
-		<div class="flex flex-wrap items-end justify-between gap-3">
-			<div>
-				<h2 class="m-0 text-2xl font-display sm:text-3xl">User info</h2>
-				<p class="mt-2 text-sm text-app-muted">
-					{#if isFavoriteView}
-						Select a participant to inspect who they reply to more often than overlap-adjusted chance would predict.
-					{:else}
-						Select a participant to inspect their message or character volume by day or week.
-					{/if}
-				</p>
-			</div>
+		<h2 class="m-0 text-2xl font-display sm:text-3xl">User info</h2>
+		<p class="mt-2 text-sm text-app-muted">
+			{#if isFavoriteView}
+				Select a participant to inspect who they reply to more often than overlap-adjusted chance would predict.
+			{:else if selectedMetric === 'media'}
+				Select a participant to inspect how many images, videos, GIFs, and stickers they send by day or week.
+			{:else}
+				Select a participant to inspect their message or character volume by day or week.
+			{/if}
+		</p>
+		<div class="mt-4 overflow-hidden rounded-2xl bg-app-surface-alt/55">
 			<SegmentedSelector
 				selectedValue={selectedMetric}
 				onSelectValue={(value) => onSelectMetric(value as ViewKey)}
 				options={metricOptions}
 				ariaLabel="User info metric selector"
+				variant="tabs"
 			/>
 		</div>
 	</div>

@@ -1,7 +1,7 @@
 import type { MessageBucketsChart as MessageBucketsChartData } from '$lib/analyzers/telegram-analysis';
 
 export type PeriodKey = 'day' | 'week';
-export type MetricKey = 'messages' | 'characters';
+export type MetricKey = 'messages' | 'characters' | 'media';
 export type ViewKey = MetricKey | 'favorites';
 
 export type ReplyFavoriteEntry = {

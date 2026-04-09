@@ -1,7 +1,8 @@
 import { formatDayLabel, getChronologicalMessages } from './telegram-analysis-shared';
 import { buildMembershipIntervals, type MembershipInterval } from './telegram-membership-index';
-import { classifyTelegramMessage } from './telegram-text-analyzer';
+import { classifyTelegramMediaGroup, classifyTelegramMessage } from './telegram-text-analyzer';
 import type {
+	MediaMessageGroup,
 	MessageBucketAggregate,
 	MessageBucketValueMetric,
 	MessageClassification,
@@ -25,6 +26,7 @@ export type NormalizedTelegramMessage = {
 	textContent: string;
 	textLength: number;
 	hasMedia: boolean;
+	mediaGroup: MediaMessageGroup | null;
 	replyToMessageId: number | null;
 	repliedToUserId: string | null;
 	replyLatencyMs: number | null;
@@ -131,6 +133,7 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 	const chronologicalMessages = getChronologicalMessages(telegramExport.messages ?? []);
 	const messages = chronologicalMessages.map(({ message, timestamp }) => {
 		const textContent = extractTextContent(message);
+		const mediaGroup = classifyTelegramMediaGroup(message);
 		const normalizedMessage: NormalizedTelegramMessage = {
 			original: message,
 			id: typeof message.id === 'number' ? message.id : null,
@@ -144,9 +147,8 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 			actorName: message.actor ?? null,
 			textContent,
 			textLength: getUserAuthoredTextLength(message),
-			hasMedia: Boolean(
-				message.photo || message.file || message.media_type || message.mime_type || message.sticker_emoji
-			),
+			hasMedia: mediaGroup !== null,
+			mediaGroup,
 			replyToMessageId: typeof message.reply_to_message_id === 'number' ? message.reply_to_message_id : null,
 			repliedToUserId: null,
 			replyLatencyMs: null,

@@ -5,18 +5,26 @@ import {
 	getTimeBucketTitle,
 	normalizeTimeBucket
 } from './telegram-analysis-shared';
-import { aggregateMessagesByTimeBucket, classifyTelegramMessage } from './telegram-text-analyzer';
+import {
+	aggregateMessagesByTimeBucket,
+	classifyTelegramMediaGroup,
+	classifyTelegramMessage
+} from './telegram-text-analyzer';
 import type {
 	MessageBucketsChart,
+	MessageBucketsChartSeries,
 	TelegramAnalysisOptions,
 	TelegramAnalysisReport,
 	TelegramExport
 } from './telegram-analysis-types';
 
-export { classifyTelegramMessage };
+export { classifyTelegramMediaGroup, classifyTelegramMessage };
 export type {
+	ChartSeriesColorKey,
+	MediaMessageGroup,
 	MessageBucketValueMetric,
 	MessageBucketsChart,
+	MessageBucketsChartSeries,
 	MessageClassification,
 	TimeRangeSpec,
 	TimeBucketSpec,
@@ -108,6 +116,22 @@ export function buildMessageBucketsChart(
 		options.timeRange
 	);
 	const visibleMessageBuckets = aggregatedMessageBuckets;
+	const replyValues = visibleMessageBuckets.map((entry) => entry.replyCount);
+	const nonReplyValues = visibleMessageBuckets.map((entry) => entry.nonReplyCount);
+	const series: MessageBucketsChartSeries[] = [
+		{
+			key: 'reply',
+			label: 'Replies',
+			colorKey: 'reply',
+			values: replyValues
+		},
+		{
+			key: 'non-reply',
+			label: 'Non-replies',
+			colorKey: 'nonReply',
+			values: nonReplyValues
+		}
+	];
 
 	return {
 		bucket,
@@ -116,7 +140,8 @@ export function buildMessageBucketsChart(
 		trimmedEdgeBucketCount: 0,
 		labels: visibleMessageBuckets.map((entry) => entry.label),
 		tooltipLabels: visibleMessageBuckets.map((entry) => entry.tooltipLabel),
-		replyValues: visibleMessageBuckets.map((entry) => entry.replyCount),
-		nonReplyValues: visibleMessageBuckets.map((entry) => entry.nonReplyCount)
+		series,
+		replyValues,
+		nonReplyValues
 	};
 }

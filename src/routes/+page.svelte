@@ -13,7 +13,7 @@
 	import type { MessageBucketsChart, TelegramAnalysisReport } from '$lib/analyzers/telegram-analysis';
 
 	type PeriodKey = 'day' | 'week';
-	type UserMetricKey = 'messages' | 'characters';
+	type UserMetricKey = 'messages' | 'characters' | 'media';
 	type UserInfoViewKey = UserMetricKey | 'favorites';
 
 	type PageData = {

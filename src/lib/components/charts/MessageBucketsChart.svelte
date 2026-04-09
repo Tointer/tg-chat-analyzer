@@ -5,6 +5,7 @@
 		Chart,
 		ChartData,
 		ChartOptions,
+		ChartDataset,
 		ScriptableContext,
 		TooltipItem
 	} from 'chart.js';
@@ -28,11 +29,27 @@
 	let canvas = $state<HTMLCanvasElement | undefined>(undefined);
 	let chart: Chart | undefined;
 
+	function getSeriesEntries() {
+		return (
+			messageBuckets.series ?? [
+				{
+					key: 'reply',
+					label: 'Replies',
+					colorKey: 'reply',
+					values: messageBuckets.replyValues
+				},
+				{
+					key: 'non-reply',
+					label: 'Non-replies',
+					colorKey: 'nonReply',
+					values: messageBuckets.nonReplyValues
+				}
+			]
+		);
+	}
+
 	function getStackValues(dataIndex: number) {
-		return [
-			messageBuckets.replyValues[dataIndex] ?? 0,
-			messageBuckets.nonReplyValues[dataIndex] ?? 0
-		];
+		return getSeriesEntries().map((series) => series.values[dataIndex] ?? 0);
 	}
 
 	function getTopOnlyRadius(shouldRoundTop: boolean): BorderRadius {
@@ -49,31 +66,66 @@
 		};
 	}
 
+	function getSeriesColors(colorKey: string, theme = activeTheme) {
+		switch (colorKey) {
+			case 'reply':
+				return {
+					backgroundColor: theme.chart.replyBar,
+					hoverBackgroundColor: theme.chart.replyBarHover
+				};
+			case 'nonReply':
+				return {
+					backgroundColor: theme.chart.nonReplyBar,
+					hoverBackgroundColor: theme.chart.nonReplyBarHover
+				};
+			case 'image':
+				return {
+					backgroundColor: theme.chart.imageBar,
+					hoverBackgroundColor: theme.chart.imageBarHover
+				};
+			case 'video':
+				return {
+					backgroundColor: theme.chart.videoBar,
+					hoverBackgroundColor: theme.chart.videoBarHover
+				};
+			case 'gif':
+				return {
+					backgroundColor: theme.chart.gifBar,
+					hoverBackgroundColor: theme.chart.gifBarHover
+				};
+			case 'sticker':
+				return {
+					backgroundColor: theme.chart.stickerBar,
+					hoverBackgroundColor: theme.chart.stickerBarHover
+				};
+			default:
+				return {
+					backgroundColor: theme.chart.nonReplyBar,
+					hoverBackgroundColor: theme.chart.nonReplyBarHover
+				};
+		}
+	}
+
 	function getChartData(theme = activeTheme): ChartData<'bar'> {
+		const seriesEntries = getSeriesEntries();
+		const datasets: ChartDataset<'bar'>[] = seriesEntries.map((series, seriesIndex) => {
+			const colors = getSeriesColors(series.colorKey, theme);
+
+			return {
+				label: series.label,
+				data: series.values,
+				backgroundColor: colors.backgroundColor,
+				hoverBackgroundColor: colors.hoverBackgroundColor,
+				borderRadius: getDatasetBorderRadius(seriesIndex),
+				borderSkipped: false,
+				stack: 'messages',
+				maxBarThickness: 28
+			};
+		});
+
 		return {
 			labels: messageBuckets.labels,
-			datasets: [
-				{
-					label: 'Replies',
-					data: messageBuckets.replyValues,
-					backgroundColor: theme.chart.replyBar,
-					hoverBackgroundColor: theme.chart.replyBarHover,
-					borderRadius: getDatasetBorderRadius(0),
-					borderSkipped: false,
-					stack: 'messages',
-					maxBarThickness: 28
-				},
-				{
-					label: 'Non-replies',
-					data: messageBuckets.nonReplyValues,
-					backgroundColor: theme.chart.nonReplyBar,
-					hoverBackgroundColor: theme.chart.nonReplyBarHover,
-					borderRadius: getDatasetBorderRadius(1),
-					borderSkipped: false,
-					stack: 'messages',
-					maxBarThickness: 28
-				}
-			]
+			datasets
 		};
 	}
 

@@ -41,6 +41,17 @@ export type TimeBucketSpec = {
 	size?: number;
 };
 
+export type MediaMessageGroup = 'image' | 'video' | 'gif' | 'sticker';
+
+export type ChartSeriesColorKey = 'reply' | 'nonReply' | MediaMessageGroup;
+
+export type MessageBucketsChartSeries = {
+	key: string;
+	label: string;
+	colorKey: ChartSeriesColorKey;
+	values: number[];
+};
+
 export type NormalizedTimeBucket = {
 	unit: TimeBucketUnit;
 	size: number;
@@ -79,6 +90,7 @@ export type MessageBucketsChart = {
 	trimmedEdgeBucketCount: number;
 	labels: string[];
 	tooltipLabels: string[];
+	series?: MessageBucketsChartSeries[];
 	replyValues: number[];
 	nonReplyValues: number[];
 };

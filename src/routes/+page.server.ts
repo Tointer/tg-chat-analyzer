@@ -3,15 +3,19 @@ import { resolve } from 'node:path';
 import { buildTelegramAnalyticsIndex } from '$lib/analyzers/telegram-analytics-index';
 import {
 	analyzeTelegramAnalyticsIndex,
-	type MessageBucketValueMetric,
 	type MessageBucketsChart,
 	type TelegramExport
 } from '$lib/analyzers/telegram-analysis';
-import { getTelegramUserMetricBuckets } from '$lib/analyzers/telegram-user-message-buckets';
+import {
+	getTelegramUserMediaBuckets,
+	getTelegramUserMetricBuckets
+} from '$lib/analyzers/telegram-user-message-buckets';
 import { getTelegramUserReplyFavoritesSummary } from '$lib/analyzers/telegram-user-reply-favorites';
 import { getTelegramUserStats } from '$lib/analyzers/telegram-user-stats';
 import type { TimeBucketSpec, TimeRangeSpec } from '$lib/analyzers/telegram-analysis';
 import type { PageServerLoad } from './$types';
+
+type UserMetricKey = 'messages' | 'characters' | 'media';
 
 const MESSAGE_BUCKETS: Record<'day' | 'week', TimeBucketSpec> = {
 	day: {
@@ -28,7 +32,7 @@ type UserInfoCardItem = {
 	userId: string;
 	userName: string;
 	metrics: Record<
-		MessageBucketValueMetric,
+		UserMetricKey,
 		{
 			label: string;
 			totalValue: number;
@@ -106,6 +110,24 @@ export const load: PageServerLoad = async ({ url }) => {
 							MESSAGE_BUCKETS.week,
 							fullHistoryRange,
 							'characters'
+						)
+					}
+				},
+				media: {
+					label: 'Media sent',
+					totalValue: user.totalMediaMessages,
+					messageBucketsByPeriod: {
+						day: getTelegramUserMediaBuckets(
+							analyticsIndex,
+							user.userId,
+							MESSAGE_BUCKETS.day,
+							fullHistoryRange
+						),
+						week: getTelegramUserMediaBuckets(
+							analyticsIndex,
+							user.userId,
+							MESSAGE_BUCKETS.week,
+							fullHistoryRange
 						)
 					}
 				}

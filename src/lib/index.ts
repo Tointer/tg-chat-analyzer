@@ -21,7 +21,11 @@ export {
 } from './analyzers/telegram-membership-index';
 export { analyzeTelegramAnalyticsIndex, analyzeTelegramExport, buildMessageBucketsChart, classifyTelegramMessage } from './analyzers/telegram-analysis';
 export { getTelegramReplyPairStats, getTelegramReplyPairStatsByUsers } from './analyzers/telegram-reply-pair-stats';
-export { getTelegramUserMessageBuckets, getTelegramUserMetricBuckets } from './analyzers/telegram-user-message-buckets';
+export {
+	getTelegramUserMediaBuckets,
+	getTelegramUserMessageBuckets,
+	getTelegramUserMetricBuckets
+} from './analyzers/telegram-user-message-buckets';
 export {
 	getTelegramUserReplyFavorites,
 	getTelegramUserReplyFavoritesSummary

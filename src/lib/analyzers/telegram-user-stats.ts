@@ -1,10 +1,15 @@
 import type { AnalyticsIndex } from './telegram-analytics-index';
-import type { MessageClassification } from './telegram-analysis-types';
+import type { MediaMessageGroup, MessageClassification } from './telegram-analysis-types';
 
 export type TelegramUserStats = {
 	userId: string;
 	userName: string;
 	totalMessages: number;
+	totalMediaMessages: number;
+	imageMessages: number;
+	videoMessages: number;
+	gifMessages: number;
+	stickerMessages: number;
 	otherMessages: number;
 	lowInfoMessages: number;
 	mediaOnlyMessages: number;
@@ -27,6 +32,15 @@ function createClassificationCounts() {
 		'media-only': 0,
 		ignore: 0
 	} satisfies Record<MessageClassification, number>;
+}
+
+function createMediaGroupCounts() {
+	return {
+		image: 0,
+		video: 0,
+		gif: 0,
+		sticker: 0
+	} satisfies Record<MediaMessageGroup, number>;
 }
 
 export function getTelegramUserStats(index: AnalyticsIndex): TelegramUserStats[] {
@@ -60,12 +74,16 @@ export function getTelegramUserStats(index: AnalyticsIndex): TelegramUserStats[]
 	const stats = [...index.messagesByUserId.entries()]
 		.map(([userId, messages]) => {
 			const classificationCounts = createClassificationCounts();
+			const mediaGroupCounts = createMediaGroupCounts();
 			const dayLabels = new Set<string>();
 			let resolvedUserName = userId;
 			let totalTextLength = 0;
 
 			for (const message of messages) {
 				classificationCounts[message.classification] += 1;
+				if (message.mediaGroup) {
+					mediaGroupCounts[message.mediaGroup] += 1;
+				}
 				dayLabels.add(message.dayLabel);
 				totalTextLength += message.textLength;
 
@@ -79,11 +97,21 @@ export function getTelegramUserStats(index: AnalyticsIndex): TelegramUserStats[]
 				classificationCounts.other +
 				classificationCounts['low-info'] +
 				classificationCounts['media-only'];
+			const totalMediaMessages =
+				mediaGroupCounts.image +
+				mediaGroupCounts.video +
+				mediaGroupCounts.gif +
+				mediaGroupCounts.sticker;
 
 			return {
 				userId,
 				userName: resolvedUserName,
 				totalMessages,
+				totalMediaMessages,
+				imageMessages: mediaGroupCounts.image,
+				videoMessages: mediaGroupCounts.video,
+				gifMessages: mediaGroupCounts.gif,
+				stickerMessages: mediaGroupCounts.sticker,
 				otherMessages: classificationCounts.other,
 				lowInfoMessages: classificationCounts['low-info'],
 				mediaOnlyMessages: classificationCounts['media-only'],

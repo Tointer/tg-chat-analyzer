@@ -14,6 +14,7 @@ import {
 	normalizeTimeBucket
 } from './telegram-analysis-shared';
 import type {
+	MediaMessageGroup,
 	MessageClassification,
 	MessageBucketAggregate,
 	MessageBucketValueMetric,
@@ -103,6 +104,40 @@ function isStickerOnlyMessage(message: TelegramExportMessage): boolean {
 	return message.media_type?.toLowerCase() === 'sticker';
 }
 
+function isStickerMessage(message: TelegramExportMessage): boolean {
+	return isStickerOnlyMessage(message);
+}
+
+function isGifMessage(message: TelegramExportMessage): boolean {
+	const mediaType = message.media_type?.toLowerCase();
+	const mimeType = message.mime_type?.toLowerCase();
+	const fileName = message.file?.toLowerCase();
+
+	return mediaType === 'animation' || mimeType === 'image/gif' || fileName?.endsWith('.gif') === true;
+}
+
+function isVideoMessage(message: TelegramExportMessage): boolean {
+	const mediaType = message.media_type?.toLowerCase();
+	const mimeType = message.mime_type?.toLowerCase();
+
+	if (isGifMessage(message) || isStickerMessage(message)) {
+		return false;
+	}
+
+	return mediaType === 'video' || mimeType?.startsWith('video/') === true;
+}
+
+function isImageMessage(message: TelegramExportMessage): boolean {
+	const mediaType = message.media_type?.toLowerCase();
+	const mimeType = message.mime_type?.toLowerCase();
+
+	if (isGifMessage(message) || isStickerMessage(message) || isVideoMessage(message)) {
+		return false;
+	}
+
+	return Boolean(message.photo || mediaType === 'photo' || mimeType?.startsWith('image/'));
+}
+
 function isLowInfoTextContent(textContent: string): boolean {
 	const normalizedCharacters = [...textContent.toLowerCase()].filter(
 		(character) => !WHITESPACE.test(character)
@@ -143,6 +178,30 @@ export function classifyTelegramMessage(message: TelegramExportMessage): Message
 	}
 
 	return 'other';
+}
+
+export function classifyTelegramMediaGroup(message: TelegramExportMessage): MediaMessageGroup | null {
+	if (message.type !== 'message') {
+		return null;
+	}
+
+	if (isStickerMessage(message)) {
+		return 'sticker';
+	}
+
+	if (isGifMessage(message)) {
+		return 'gif';
+	}
+
+	if (isVideoMessage(message)) {
+		return 'video';
+	}
+
+	if (isImageMessage(message)) {
+		return 'image';
+	}
+
+	return null;
 }
 
 export function aggregateMessagesByTimeBucket(
