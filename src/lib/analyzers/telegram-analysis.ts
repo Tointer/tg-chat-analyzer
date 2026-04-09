@@ -10,6 +10,7 @@ import {
 	classifyTelegramMediaGroup,
 	classifyTelegramMessage
 } from './telegram-text-analyzer';
+import { getTelegramReactionStatsSummary } from './telegram-reaction-stats';
 import type {
 	MessageBucketsChart,
 	MessageBucketsChartSeries,
@@ -33,7 +34,9 @@ export type {
 	TelegramExport,
 	TelegramExportMessage,
 	TelegramTextEntity,
-	TelegramTextPart
+	TelegramTextPart,
+	TelegramReaction,
+	TelegramReactionRecent
 } from './telegram-analysis-types';
 
 export function analyzeTelegramExport(
@@ -69,6 +72,7 @@ export function analyzeTelegramAnalyticsIndex(
 	const otherMessages = index.stats.classificationCounts.other;
 	const lowInfoMessages = index.stats.classificationCounts['low-info'];
 	const mediaOnlyMessages = index.stats.classificationCounts['media-only'];
+	const reactionSummary = getTelegramReactionStatsSummary(index);
 	const busiestBucket = visibleMessageBuckets.reduce(
 		(current, entry) =>
 			entry.replyCount + entry.nonReplyCount > current.replyCount + current.nonReplyCount
@@ -87,6 +91,9 @@ export function analyzeTelegramAnalyticsIndex(
 		participantTimeline,
 		messageBuckets,
 		totalMessages,
+		totalMediaMessages: index.stats.totalMediaMessages,
+		peopleChatted: index.stats.peopleChatted,
+		totalReactions: reactionSummary.totalReactions,
 		replyMessages,
 		nonReplyMessages,
 		otherMessages,
@@ -101,6 +108,14 @@ export function analyzeTelegramAnalyticsIndex(
 		range: {
 			start: aggregatedMessageBuckets[0]?.start ?? 'N/A',
 			end: aggregatedMessageBuckets.at(-1)?.end ?? 'N/A'
+		},
+		messageSpan: {
+			startTimestamp: index.stats.dateRange.start,
+			endTimestamp: index.stats.dateRange.end,
+			durationMs:
+				index.stats.dateRange.start !== null && index.stats.dateRange.end !== null
+					? Math.max(0, index.stats.dateRange.end - index.stats.dateRange.start)
+					: null
 		}
 	};
 }

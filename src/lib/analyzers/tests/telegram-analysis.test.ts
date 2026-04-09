@@ -125,6 +125,9 @@ describe('analyzeTelegramExport', () => {
 		assert.deepEqual(report.messageBuckets.nonReplyValues, [1, 1, 2, 1, 1]);
 		assert.deepEqual(report.messageBuckets.replyValues, [0, 0, 0, 0, 0]);
 		assert.equal(report.totalMessages, 6);
+		assert.equal(report.totalMediaMessages, 1);
+		assert.equal(report.peopleChatted, 0);
+		assert.equal(report.totalReactions, 0);
 		assert.equal(report.replyMessages, 0);
 		assert.equal(report.nonReplyMessages, 6);
 		assert.equal(report.otherMessages, 4);
@@ -137,6 +140,11 @@ describe('analyzeTelegramExport', () => {
 			count: 2
 		});
 		assert.deepEqual(report.range, { start: '2025-12-13', end: '2025-12-17' });
+		assert.deepEqual(report.messageSpan, {
+			startTimestamp: 1765616400000,
+			endTimestamp: 1765962000000,
+			durationMs: 345600000
+		});
 	});
 
 	test('keeps edge buckets in multi-day chart series', () => {
@@ -323,9 +331,45 @@ describe('analyzeTelegramExport', () => {
 		assert.deepEqual(report.messageBuckets.replyValues, [0, 2, 0]);
 		assert.equal(report.replyMessages, 2);
 		assert.equal(report.nonReplyMessages, 4);
+		assert.equal(report.totalMediaMessages, 1);
 		assert.equal(report.mediaOnlyMessages, 1);
 		assert.equal(report.lowInfoMessages, 1);
 		assert.equal(report.otherMessages, 4);
+	});
+
+	test('counts people chatted and total reactions in the summary report', () => {
+		const report = analyzeTelegramExport({
+			name: 'Reaction summary chat',
+			messages: [
+				createMessage({
+					id: 1,
+					from: 'Alice',
+					from_id: 'user1',
+					date: '2025-12-14T10:00:00',
+					date_unixtime: '1765706400',
+					photo: 'photo.jpg',
+					reactions: [{ type: 'emoji', emoji: '🔥', count: 2 }]
+				}),
+				createMessage({
+					id: 2,
+					from: 'Bob',
+					from_id: 'user2',
+					date: '2025-12-14T11:00:00',
+					date_unixtime: '1765710000',
+					text: 'hello',
+					reactions: [{ type: 'emoji', emoji: '😁', count: 1 }]
+				})
+			]
+		});
+
+		assert.equal(report.peopleChatted, 2);
+		assert.equal(report.totalMediaMessages, 1);
+		assert.equal(report.totalReactions, 3);
+		assert.deepEqual(report.messageSpan, {
+			startTimestamp: 1765706400000,
+			endTimestamp: 1765710000000,
+			durationMs: 3600000
+		});
 	});
 
 	test('builds participant timeline from membership events', () => {

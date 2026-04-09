@@ -13,10 +13,7 @@
 </script>
 
 <section class="mb-4 grid gap-4 pt-4 lg:grid-cols-3" aria-label="Chat summary">
-	<TotalMessagesCard
-		totalMessages={report.totalMessages}
-		mediaOnlyMessages={report.mediaOnlyMessages}
-	/>
+	<TotalMessagesCard {report} />
 
 	<ParticipantsSummaryCard participantTimeline={report.participantTimeline} {activeTheme} />
 </section>

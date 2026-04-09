@@ -25,6 +25,7 @@ export type NormalizedTelegramMessage = {
 	actorName: string | null;
 	textContent: string;
 	textLength: number;
+	reactionCount: number;
 	hasMedia: boolean;
 	mediaGroup: MediaMessageGroup | null;
 	replyToMessageId: number | null;
@@ -56,6 +57,9 @@ export type AnalyticsIndex = {
 	bucketAggregatesByKey: Map<string, MessageBucketAggregate[]>;
 	stats: {
 		totalMessages: number;
+		totalMediaMessages: number;
+		peopleChatted: number;
+		totalReactions: number;
 		classificationCounts: Record<MessageClassification, number>;
 		dateRange: {
 			start: number | null;
@@ -85,6 +89,10 @@ function getUserAuthoredTextLength(message: TelegramExportMessage): number {
 	}
 
 	return extractTextContent(message).length;
+}
+
+function getReactionCount(message: TelegramExportMessage): number {
+	return (message.reactions ?? []).reduce((sum, reaction) => sum + Math.max(0, reaction.count ?? 0), 0);
 }
 
 function buildBucketKey(
@@ -129,11 +137,14 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 		'media-only': 0,
 		ignore: 0
 	};
+	let totalMediaMessages = 0;
+	let totalReactions = 0;
 
 	const chronologicalMessages = getChronologicalMessages(telegramExport.messages ?? []);
 	const messages = chronologicalMessages.map(({ message, timestamp }) => {
 		const textContent = extractTextContent(message);
 		const mediaGroup = classifyTelegramMediaGroup(message);
+		const reactionCount = getReactionCount(message);
 		const normalizedMessage: NormalizedTelegramMessage = {
 			original: message,
 			id: typeof message.id === 'number' ? message.id : null,
@@ -147,6 +158,7 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 			actorName: message.actor ?? null,
 			textContent,
 			textLength: getUserAuthoredTextLength(message),
+			reactionCount,
 			hasMedia: mediaGroup !== null,
 			mediaGroup,
 			replyToMessageId: typeof message.reply_to_message_id === 'number' ? message.reply_to_message_id : null,
@@ -158,6 +170,12 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 		};
 
 		classificationCounts[normalizedMessage.classification] += 1;
+		if (normalizedMessage.classification !== 'ignore' && normalizedMessage.hasMedia) {
+			totalMediaMessages += 1;
+		}
+		if (normalizedMessage.classification !== 'ignore') {
+			totalReactions += normalizedMessage.reactionCount;
+		}
 
 		if (normalizedMessage.id !== null) {
 			messageById.set(normalizedMessage.id, normalizedMessage);
@@ -227,6 +245,9 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 		bucketAggregatesByKey: new Map<string, MessageBucketAggregate[]>(),
 		stats: {
 			totalMessages: messages.filter((message) => message.classification !== 'ignore').length,
+			totalMediaMessages,
+			peopleChatted: messagesByUserId.size,
+			totalReactions,
 			classificationCounts,
 			dateRange: {
 				start: messages[0]?.timestamp ?? null,

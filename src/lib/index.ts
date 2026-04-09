@@ -21,6 +21,7 @@ export {
 } from './analyzers/telegram-membership-index';
 export { analyzeTelegramAnalyticsIndex, analyzeTelegramExport, buildMessageBucketsChart, classifyTelegramMessage } from './analyzers/telegram-analysis';
 export { getTelegramReplyPairStats, getTelegramReplyPairStatsByUsers } from './analyzers/telegram-reply-pair-stats';
+export { getTelegramReactionStatsSummary } from './analyzers/telegram-reaction-stats';
 export {
 	getTelegramUserMediaBuckets,
 	getTelegramUserMessageBuckets,
@@ -57,6 +58,7 @@ export type {
 } from './analyzers/telegram-analysis';
 export type { MembershipInterval } from './analyzers/telegram-membership-index';
 export type { TelegramReplyPairStats } from './analyzers/telegram-reply-pair-stats';
+export type { TelegramReactionStatsSummary } from './analyzers/telegram-reaction-stats';
 export type {
 	TelegramUserReplyFavorite,
 	TelegramUserReplyFavoritesSummary

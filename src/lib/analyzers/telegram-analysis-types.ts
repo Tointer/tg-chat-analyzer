@@ -4,6 +4,20 @@ export type TelegramTextEntity = {
 	document_id?: string;
 };
 
+export type TelegramReactionRecent = {
+	from?: string;
+	from_id?: string;
+	date?: string;
+	date_unixtime?: string;
+};
+
+export type TelegramReaction = {
+	type?: string;
+	count?: number;
+	emoji?: string;
+	recent?: TelegramReactionRecent[];
+};
+
 export type TelegramTextPart = string | TelegramTextEntity;
 
 export type TelegramExportMessage = {
@@ -27,6 +41,7 @@ export type TelegramExportMessage = {
 	media_type?: string;
 	mime_type?: string;
 	sticker_emoji?: string;
+	reactions?: TelegramReaction[];
 };
 
 export type TelegramExport = {
@@ -107,6 +122,9 @@ export type TelegramAnalysisReport = {
 	};
 	messageBuckets: MessageBucketsChart;
 	totalMessages: number;
+	totalMediaMessages: number;
+	peopleChatted: number;
+	totalReactions: number;
 	replyMessages: number;
 	nonReplyMessages: number;
 	otherMessages: number;
@@ -121,6 +139,11 @@ export type TelegramAnalysisReport = {
 	range: {
 		start: string;
 		end: string;
+	};
+	messageSpan: {
+		startTimestamp: number | null;
+		endTimestamp: number | null;
+		durationMs: number | null;
 	};
 };
 
