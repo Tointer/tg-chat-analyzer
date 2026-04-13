@@ -19,6 +19,16 @@ export type ReplyFavoriteEntry = {
 	overlapReplyCount: number;
 };
 
+export type BestMessageEntry = {
+	messageId: number;
+	authorName: string;
+	forwardedFrom: string | null;
+	timestamp: number;
+	preview: string;
+	reactionCount: number;
+	replyCount: number;
+};
+
 export type UserInfoCardItem = {
 	userId: string;
 	userName: string;
@@ -41,5 +51,9 @@ export type UserInfoCardItem = {
 		leaderboardValue: number;
 		leaderboardValueLabel: string;
 		entries: ReplyFavoriteEntry[];
+	};
+	bestMessages: {
+		mostReactions: BestMessageEntry[];
+		mostReplies: BestMessageEntry[];
 	};
 };

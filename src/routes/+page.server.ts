@@ -8,6 +8,7 @@ import {
 	type TelegramExport
 } from '$lib/analyzers/telegram-analysis';
 import { getTelegramUserAverageMessagePattern } from '$lib/analyzers/telegram-user-average-message-pattern';
+import { getTelegramUserBestMessagesById } from '$lib/analyzers/telegram-user-best-messages';
 import { getTelegramUserMediaBuckets, getTelegramUserMetricBuckets } from '$lib/analyzers/telegram-user-message-buckets';
 import { getTelegramUserReplyFavoritesSummary } from '$lib/analyzers/telegram-user-reply-favorites';
 import { getTelegramUserStats } from '$lib/analyzers/telegram-user-stats';
@@ -60,6 +61,26 @@ type UserInfoCardItem = {
 			overlapReplyCount: number;
 		}>;
 	};
+	bestMessages: {
+		mostReactions: Array<{
+			messageId: number;
+			authorName: string;
+			forwardedFrom: string | null;
+			timestamp: number;
+			preview: string;
+			reactionCount: number;
+			replyCount: number;
+		}>;
+		mostReplies: Array<{
+			messageId: number;
+			authorName: string;
+			forwardedFrom: string | null;
+			timestamp: number;
+			preview: string;
+			reactionCount: number;
+			replyCount: number;
+		}>;
+	};
 };
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -73,6 +94,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	};
 	const userInfoCards: UserInfoCardItem[] = getTelegramUserStats(analyticsIndex).map((user) => {
 		const favoriteSummary = getTelegramUserReplyFavoritesSummary(analyticsIndex, user.userId);
+		const bestMessagesSummary = getTelegramUserBestMessagesById(analyticsIndex, user.userId);
 
 		return {
 			userId: user.userId,
@@ -152,6 +174,10 @@ export const load: PageServerLoad = async ({ url }) => {
 				leaderboardValue: favoriteSummary.repliesSent,
 				leaderboardValueLabel: 'Replies sent',
 				entries: favoriteSummary.favorites
+			},
+			bestMessages: {
+				mostReactions: bestMessagesSummary?.mostReactions ?? [],
+				mostReplies: bestMessagesSummary?.mostReplies ?? []
 			}
 		};
 	});

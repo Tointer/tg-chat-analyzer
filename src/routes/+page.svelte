@@ -2,6 +2,7 @@
 	import { fromStore } from 'svelte/store';
 	import {
 		activeThemeName,
+		BestMessagesSection,
 		ChatPageHeader,
 		ChatSummaryCards,
 		cycleTheme,
@@ -54,6 +55,26 @@
 					overlapMessageCount: number;
 					overlapTargetMessageCount: number;
 					overlapReplyCount: number;
+				}>;
+			};
+			bestMessages: {
+				mostReactions: Array<{
+					messageId: number;
+					authorName: string;
+					forwardedFrom: string | null;
+					timestamp: number;
+					preview: string;
+					reactionCount: number;
+					replyCount: number;
+				}>;
+				mostReplies: Array<{
+					messageId: number;
+					authorName: string;
+					forwardedFrom: string | null;
+					timestamp: number;
+					preview: string;
+					reactionCount: number;
+					replyCount: number;
 				}>;
 			};
 		}>;
@@ -132,4 +153,6 @@
 		onSelectPeriod={selectUserPeriod}
 		onSelectMetric={selectUserMetric}
 	/>
+
+	<BestMessagesSection users={data.userInfoCards} />
 </div>

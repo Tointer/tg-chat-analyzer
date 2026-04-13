@@ -9,6 +9,7 @@ export { default as MessagePeriodToggle } from './components/charts/MessagePerio
 export { default as MiniAreaChart } from './components/charts/MiniAreaChart.svelte';
 export { default as RankedListItem } from './components/user-info/RankedListItem.svelte';
 export { default as ReplyPeersList } from './components/user-info/ReplyPeersList.svelte';
+export { default as BestMessagesSection } from './components/user-info/BestMessagesSection.svelte';
 export { default as SegmentedSelector } from './components/user-info/SegmentedSelector.svelte';
 export { default as UserInfoSection } from './components/user-info/UserInfoSection.svelte';
 export { default as UserInfoUserList } from './components/user-info/UserInfoUserList.svelte';
@@ -28,6 +29,10 @@ export {
 	getTelegramUserMetricBuckets
 } from './analyzers/telegram-user-message-buckets';
 export { getTelegramUserAverageMessagePattern } from './analyzers/telegram-user-average-message-pattern';
+export {
+	getTelegramUserBestMessages,
+	getTelegramUserBestMessagesById
+} from './analyzers/telegram-user-best-messages';
 export {
 	getTelegramUserReplyFavorites,
 	getTelegramUserReplyFavoritesSummary
@@ -62,6 +67,10 @@ export type {
 export type { MembershipInterval } from './analyzers/telegram-membership-index';
 export type { TelegramReplyPairStats } from './analyzers/telegram-reply-pair-stats';
 export type { TelegramReactionStatsSummary } from './analyzers/telegram-reaction-stats';
+export type {
+	TelegramUserBestMessage,
+	TelegramUserBestMessagesSummary
+} from './analyzers/telegram-user-best-messages';
 export type {
 	TelegramUserReplyFavorite,
 	TelegramUserReplyFavoritesSummary
