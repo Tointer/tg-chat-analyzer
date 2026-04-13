@@ -21,6 +21,8 @@ import type {
 
 export { classifyTelegramMediaGroup, classifyTelegramMessage };
 export type {
+	AverageMessagePatternChart,
+	AverageMessagePatternMode,
 	ChartSeriesColorKey,
 	MediaMessageGroup,
 	MessageBucketValueMetric,

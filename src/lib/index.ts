@@ -27,6 +27,7 @@ export {
 	getTelegramUserMessageBuckets,
 	getTelegramUserMetricBuckets
 } from './analyzers/telegram-user-message-buckets';
+export { getTelegramUserAverageMessagePattern } from './analyzers/telegram-user-average-message-pattern';
 export {
 	getTelegramUserReplyFavorites,
 	getTelegramUserReplyFavoritesSummary
@@ -45,6 +46,8 @@ export {
 } from './themes';
 export type { AppTheme, AppThemeName } from './themes';
 export type {
+	AverageMessagePatternChart,
+	AverageMessagePatternMode,
 	MessageBucketValueMetric,
 	MessageClassification,
 	TimeBucketSpec,

@@ -3,13 +3,12 @@ import { resolve } from 'node:path';
 import { buildTelegramAnalyticsIndex } from '$lib/analyzers/telegram-analytics-index';
 import {
 	analyzeTelegramAnalyticsIndex,
+	type AverageMessagePatternChart,
 	type MessageBucketsChart,
 	type TelegramExport
 } from '$lib/analyzers/telegram-analysis';
-import {
-	getTelegramUserMediaBuckets,
-	getTelegramUserMetricBuckets
-} from '$lib/analyzers/telegram-user-message-buckets';
+import { getTelegramUserAverageMessagePattern } from '$lib/analyzers/telegram-user-average-message-pattern';
+import { getTelegramUserMediaBuckets, getTelegramUserMetricBuckets } from '$lib/analyzers/telegram-user-message-buckets';
 import { getTelegramUserReplyFavoritesSummary } from '$lib/analyzers/telegram-user-reply-favorites';
 import { getTelegramUserStats } from '$lib/analyzers/telegram-user-stats';
 import type { TimeBucketSpec, TimeRangeSpec } from '$lib/analyzers/telegram-analysis';
@@ -39,6 +38,12 @@ type UserInfoCardItem = {
 			messageBucketsByPeriod: Record<'day' | 'week', MessageBucketsChart>;
 		}
 	>;
+	averageMessages: {
+		label: string;
+		leaderboardValue: number;
+		leaderboardValueLabel: string;
+		chartsByPeriod: Record<'day' | 'week', AverageMessagePatternChart>;
+	};
 	favorites: {
 		label: string;
 		leaderboardValue: number;
@@ -130,6 +135,16 @@ export const load: PageServerLoad = async ({ url }) => {
 							fullHistoryRange
 						)
 					}
+				}
+			},
+			averageMessages: {
+				label: 'Average messages',
+				leaderboardValue:
+					user.activeDayCount > 0 ? user.totalMessages / user.activeDayCount : 0,
+				leaderboardValueLabel: 'Avg per active day',
+				chartsByPeriod: {
+					day: getTelegramUserAverageMessagePattern(analyticsIndex, user.userId, 'day'),
+					week: getTelegramUserAverageMessagePattern(analyticsIndex, user.userId, 'week')
 				}
 			},
 			favorites: {

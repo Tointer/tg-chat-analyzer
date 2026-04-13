@@ -88,6 +88,19 @@ export type TimeRangeSpec = {
 	endTimestamp?: number;
 };
 
+export type AverageMessagePatternMode = 'day' | 'week';
+
+export type AverageMessagePatternChart = {
+	mode: AverageMessagePatternMode;
+	title: string;
+	labels: string[];
+	tooltipLabels: string[];
+	values: number[];
+	peakLabel: string;
+	peakValue: number;
+	summaryValueLabel: string;
+};
+
 export type NormalizedTimeRange = {
 	startTimestamp: number;
 	endTimestamp: number;

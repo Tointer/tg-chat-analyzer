@@ -1,8 +1,11 @@
-import type { MessageBucketsChart as MessageBucketsChartData } from '$lib/analyzers/telegram-analysis';
+import type {
+	AverageMessagePatternChart as AverageMessagePatternChartData,
+	MessageBucketsChart as MessageBucketsChartData
+} from '$lib/analyzers/telegram-analysis';
 
 export type PeriodKey = 'day' | 'week';
 export type MetricKey = 'messages' | 'characters' | 'media';
-export type ViewKey = MetricKey | 'favorites';
+export type ViewKey = MetricKey | 'average' | 'favorites';
 
 export type ReplyFavoriteEntry = {
 	targetUserId: string;
@@ -27,6 +30,12 @@ export type UserInfoCardItem = {
 			messageBucketsByPeriod: Record<PeriodKey, MessageBucketsChartData>;
 		}
 	>;
+	averageMessages: {
+		label: string;
+		leaderboardValue: number;
+		leaderboardValueLabel: string;
+		chartsByPeriod: Record<PeriodKey, AverageMessagePatternChartData>;
+	};
 	favorites: {
 		label: string;
 		leaderboardValue: number;

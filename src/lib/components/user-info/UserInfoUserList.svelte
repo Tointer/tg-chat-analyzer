@@ -14,6 +14,10 @@
 	let showTopFade = $state(false);
 	let showBottomFade = $state(false);
 	const numberFormatter = new Intl.NumberFormat('en-US');
+	const averageFormatter = new Intl.NumberFormat('en-US', {
+		minimumFractionDigits: 1,
+		maximumFractionDigits: 1
+	});
 
 	function updateScrollFades() {
 		if (!scrollViewport) {
@@ -82,7 +86,9 @@
 						<strong class="shrink-0 text-lg font-display">
 							{selectedMetric === 'favorites'
 								? numberFormatter.format(user.favorites.leaderboardValue)
-								: numberFormatter.format(user.metrics[selectedMetric].totalValue)}
+								: selectedMetric === 'average'
+									? averageFormatter.format(user.averageMessages.leaderboardValue)
+									: numberFormatter.format(user.metrics[selectedMetric].totalValue)}
 						</strong>
 					</RankedListItem>
 				{/each}

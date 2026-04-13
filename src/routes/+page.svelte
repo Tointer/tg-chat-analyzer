@@ -10,11 +10,15 @@
 		UserInfoSection,
 		themeOrder
 	} from '$lib';
-	import type { MessageBucketsChart, TelegramAnalysisReport } from '$lib/analyzers/telegram-analysis';
+	import type {
+		AverageMessagePatternChart,
+		MessageBucketsChart,
+		TelegramAnalysisReport
+	} from '$lib/analyzers/telegram-analysis';
 
 	type PeriodKey = 'day' | 'week';
 	type UserMetricKey = 'messages' | 'characters' | 'media';
-	type UserInfoViewKey = UserMetricKey | 'favorites';
+	type UserInfoViewKey = UserMetricKey | 'average' | 'favorites';
 
 	type PageData = {
 		selectedPeriod: 'day' | 'week';
@@ -30,6 +34,12 @@
 					messageBucketsByPeriod: Record<PeriodKey, MessageBucketsChart>;
 				}
 			>;
+			averageMessages: {
+				label: string;
+				leaderboardValue: number;
+				leaderboardValueLabel: string;
+				chartsByPeriod: Record<PeriodKey, AverageMessagePatternChart>;
+			};
 			favorites: {
 				label: string;
 				leaderboardValue: number;

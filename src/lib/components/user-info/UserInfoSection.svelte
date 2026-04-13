@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AverageMessagePatternChart from '../charts/AverageMessagePatternChart.svelte';
 	import MessageBucketsChart from '../charts/MessageBucketsChart.svelte';
 	import MessagePeriodToggle from '../charts/MessagePeriodToggle.svelte';
 	import ReplyPeersList from './ReplyPeersList.svelte';
@@ -30,19 +31,27 @@
 	}: Props = $props();
 	let expandedFavoriteId = $state<string | null>(null);
 	const numberFormatter = new Intl.NumberFormat('en-US');
+	const averageFormatter = new Intl.NumberFormat('en-US', {
+		minimumFractionDigits: 1,
+		maximumFractionDigits: 1
+	});
 	const metricOptions = [
 		{ value: 'messages', label: 'Message Count' },
 		{ value: 'characters', label: 'Characters Count' },
 		{ value: 'media', label: 'Media sent' },
+		{ value: 'average', label: 'Average messages' },
 		{ value: 'favorites', label: 'Reply Peers' }
 	];
 	const isFavoriteView = $derived(selectedMetric === 'favorites');
+	const isAverageView = $derived(selectedMetric === 'average');
 
 	const sortedUsers = $derived(
 		[...users].sort((left, right) => {
 			const valueDifference =
 				selectedMetric === 'favorites'
 					? right.favorites.leaderboardValue - left.favorites.leaderboardValue
+					: selectedMetric === 'average'
+						? right.averageMessages.leaderboardValue - left.averageMessages.leaderboardValue
 					: right.metrics[selectedMetric].totalValue - left.metrics[selectedMetric].totalValue;
 
 			if (valueDifference !== 0) {
@@ -56,16 +65,20 @@
 	const selectedUser = $derived(
 		sortedUsers.find((user) => user.userId === selectedUserId) ?? sortedUsers[0] ?? null
 	);
+	const selectedAverageMessages = $derived(selectedUser?.averageMessages ?? null);
+	const selectedAverageChart = $derived(selectedAverageMessages?.chartsByPeriod[selectedPeriod] ?? null);
 	const selectedMessageBuckets = $derived(
-		selectedMetric === 'favorites'
+		selectedMetric === 'favorites' || selectedMetric === 'average'
 			? null
 			: selectedUser?.metrics[selectedMetric].messageBucketsByPeriod[selectedPeriod] ?? null
 	);
 	const selectedMetricData = $derived(
-		selectedMetric === 'favorites' ? null : selectedUser?.metrics[selectedMetric] ?? null
+		selectedMetric === 'favorites' || selectedMetric === 'average'
+			? null
+			: selectedUser?.metrics[selectedMetric] ?? null
 	);
 	const selectedMetricFallbackBuckets = $derived(
-		selectedMetric === 'favorites'
+		selectedMetric === 'favorites' || selectedMetric === 'average'
 			? null
 			: selectedUser?.metrics[selectedMetric].messageBucketsByPeriod.week ?? null
 	);
@@ -94,6 +107,8 @@
 		<p class="mt-2 text-sm text-app-muted">
 			{#if isFavoriteView}
 				Select a participant to inspect who they reply to more often than overlap-adjusted chance would predict.
+			{:else if isAverageView}
+				Select a participant to inspect their average message rhythm across 24 hours or 7 weekdays.
 			{:else if selectedMetric === 'media'}
 				Select a participant to inspect how many images, videos, GIFs, and stickers they send by day or week.
 			{:else}
@@ -133,6 +148,18 @@
 							<p class="m-0 text-xs uppercase tracking-widest text-app-subtle">{selectedFavoritesSummary?.leaderboardValueLabel}</p>
 							<strong class="mt-2 block text-3xl font-display text-app-text">{numberFormatter.format(selectedFavoritesSummary?.leaderboardValue ?? 0)}</strong>
 						</div>
+					{:else if isAverageView}
+						<div class="flex flex-wrap items-end justify-end gap-3 sm:gap-4">
+							<div class="text-right">
+								<p class="m-0 text-xs uppercase tracking-widest text-app-subtle">{selectedAverageChart?.summaryValueLabel}</p>
+								<strong class="mt-2 block text-3xl font-display text-app-text">{averageFormatter.format(selectedAverageChart?.peakValue ?? 0)}</strong>
+							</div>
+							<MessagePeriodToggle
+								selectedPeriod={selectedPeriod}
+								onSelectPeriod={onSelectPeriod}
+								ariaLabel="User average message period selector"
+							/>
+						</div>
 					{:else}
 						<div class="flex flex-wrap items-end justify-end gap-3 sm:gap-4">
 							<div class="text-right">
@@ -156,7 +183,14 @@
 					/>
 				{:else}
 					<div class="min-h-0 flex-1">
-						{#if selectedChartBuckets}
+						{#if isAverageView && selectedAverageChart}
+							<AverageMessagePatternChart
+								chartData={selectedAverageChart}
+								{activeTheme}
+								heightClass="h-full min-h-0"
+								emptyMessage="Not enough data to draw this user's average chart yet."
+							/>
+						{:else if selectedChartBuckets}
 							<MessageBucketsChart
 								messageBuckets={selectedChartBuckets}
 								{activeTheme}
