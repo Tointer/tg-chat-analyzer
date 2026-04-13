@@ -9,6 +9,8 @@ export { default as MessagePeriodToggle } from './components/charts/MessagePerio
 export { default as MiniAreaChart } from './components/charts/MiniAreaChart.svelte';
 export { default as RankedListItem } from './components/user-info/RankedListItem.svelte';
 export { default as ReplyPeersList } from './components/user-info/ReplyPeersList.svelte';
+export { default as BestMessageCard } from './components/user-info/BestMessageCard.svelte';
+export { default as BestMessageRepliesList } from './components/user-info/BestMessageRepliesList.svelte';
 export { default as BestMessagesSection } from './components/user-info/BestMessagesSection.svelte';
 export { default as SegmentedSelector } from './components/user-info/SegmentedSelector.svelte';
 export { default as UserInfoSection } from './components/user-info/UserInfoSection.svelte';

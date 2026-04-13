@@ -66,6 +66,11 @@
 					preview: string;
 					reactionCount: number;
 					replyCount: number;
+					replies: Array<{
+						messageId: number;
+						authorName: string;
+						preview: string;
+					}>;
 				}>;
 				mostReplies: Array<{
 					messageId: number;
@@ -75,6 +80,11 @@
 					preview: string;
 					reactionCount: number;
 					replyCount: number;
+					replies: Array<{
+						messageId: number;
+						authorName: string;
+						preview: string;
+					}>;
 				}>;
 			};
 		}>;

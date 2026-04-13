@@ -115,6 +115,11 @@ describe('getTelegramUserBestMessages', () => {
 		assert.equal(aliceBestMessages?.mostReplies[0]?.forwardedFrom, 'News Channel');
 		assert.equal(aliceBestMessages?.mostReplies[0]?.replyCount, 3);
 		assert.equal(aliceBestMessages?.mostReplies[0]?.preview, 'Photo');
+		assert.deepEqual(aliceBestMessages?.mostReplies[0]?.replies, [
+			{ messageId: 200, authorName: 'Bob', preview: 'reply one' },
+			{ messageId: 201, authorName: 'Carol', preview: 'reply two' },
+			{ messageId: 202, authorName: 'Dave', preview: 'reply three' }
+		]);
 		assert.equal(aliceBestMessages?.mostReplies[1]?.messageId, 3);
 		assert.equal(aliceBestMessages?.mostReplies[1]?.replyCount, 2);
 	});

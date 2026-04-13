@@ -70,6 +70,11 @@ type UserInfoCardItem = {
 			preview: string;
 			reactionCount: number;
 			replyCount: number;
+			replies: Array<{
+				messageId: number;
+				authorName: string;
+				preview: string;
+			}>;
 		}>;
 		mostReplies: Array<{
 			messageId: number;
@@ -79,6 +84,11 @@ type UserInfoCardItem = {
 			preview: string;
 			reactionCount: number;
 			replyCount: number;
+			replies: Array<{
+				messageId: number;
+				authorName: string;
+				preview: string;
+			}>;
 		}>;
 	};
 };

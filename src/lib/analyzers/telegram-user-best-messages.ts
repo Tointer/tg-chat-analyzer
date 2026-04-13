@@ -8,6 +8,11 @@ export type TelegramUserBestMessage = {
 	preview: string;
 	reactionCount: number;
 	replyCount: number;
+	replies: Array<{
+		messageId: number;
+		authorName: string;
+		preview: string;
+	}>;
 };
 
 export type TelegramUserBestMessagesSummary = {
@@ -93,6 +98,15 @@ export function getTelegramUserBestMessages(index: AnalyticsIndex): TelegramUser
 	}
 
 	const repliesByMessageId = new Map<number, number>();
+	const directRepliesByMessageId = new Map<
+		number,
+		Array<{
+			messageId: number;
+			authorName: string;
+			preview: string;
+			timestamp: number;
+		}>
+	>();
 
 	for (const message of index.messages) {
 		if (message.classification === 'ignore' || message.replyToMessageId === null) {
@@ -103,6 +117,18 @@ export function getTelegramUserBestMessages(index: AnalyticsIndex): TelegramUser
 			message.replyToMessageId,
 			(repliesByMessageId.get(message.replyToMessageId) ?? 0) + 1
 		);
+		const directReplies = directRepliesByMessageId.get(message.replyToMessageId) ?? [];
+		directReplies.push({
+			messageId: message.id ?? -1,
+			authorName: message.senderName ?? message.senderId ?? 'Unknown',
+			preview: buildMessagePreview(message),
+			timestamp: message.timestamp
+		});
+		directRepliesByMessageId.set(message.replyToMessageId, directReplies);
+	}
+
+	for (const directReplies of directRepliesByMessageId.values()) {
+		directReplies.sort((left, right) => left.timestamp - right.timestamp || left.messageId - right.messageId);
 	}
 
 	const summaries = [...index.messagesByUserId.entries()]
@@ -122,7 +148,12 @@ export function getTelegramUserBestMessages(index: AnalyticsIndex): TelegramUser
 						timestamp: message.timestamp,
 						preview: buildMessagePreview(message),
 						reactionCount: message.reactionCount,
-						replyCount: repliesByMessageId.get(message.id as number) ?? 0
+						replyCount: repliesByMessageId.get(message.id as number) ?? 0,
+						replies: (directRepliesByMessageId.get(message.id as number) ?? []).map((reply) => ({
+							messageId: reply.messageId,
+							authorName: reply.authorName,
+							preview: reply.preview
+						}))
 					} satisfies TelegramUserBestMessage;
 				});
 
