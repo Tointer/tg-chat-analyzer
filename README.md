@@ -13,11 +13,16 @@ Small web app to explore Telegram group chat export data locally
 - Highlight top messages by reactions and replies
 - Inspect first-order replies for standout messages
 
+## What it can't do
+- It can't show actual images and videos in messages highlight section
+- Custom time range is not supported yet
+- It will probably break if there is too little messages or time horizon is too big, I didn't stress test it
+
 
 ## How to use
-For now, by putting "result.json" from telegram chat export to the ./src/messages folder
+For now, by putting "result.json" from telegram chat export to the ./src/messages folder, and run it in any way
 
-## Dev
+## Dev run
 
 Install dependencies: `bun install`
 Start a development server: `bun run dev`
