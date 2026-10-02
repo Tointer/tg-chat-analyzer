@@ -59,6 +59,9 @@
 			.slice(0, 10);
 	}
 
+	const mostReactions = $derived(getMessages('reactions'));
+	const mostReplies = $derived(getMessages('replies'));
+
 	function toggleMessageSelection(messageKey: string) {
 		selectedMessageKey = selectedMessageKey === messageKey ? null : messageKey;
 	}
@@ -68,15 +71,15 @@
 	{#if users.length > 0}
 		<div class="mt-8 grid items-start gap-6 lg:grid-cols-2 lg:gap-8" aria-label="Best messages">
 			{#each [
-					{ key: 'reactions', title: 'Most reactions' },
-					{ key: 'replies', title: 'Most replies' }
+					{ key: 'reactions', title: 'Most reactions', messages: mostReactions },
+					{ key: 'replies', title: 'Most replies', messages: mostReplies }
 			] as column (column.key)}
 					<section>
 						<h3 class="mb-5 text-center text-xl font-display text-app-text sm:text-2xl">{column.title}</h3>
 
-					{#if getMessages(column.key as BestMessageKind).length > 0}
+					{#if column.messages.length > 0}
 						<div class="space-y-3">
-							{#each getMessages(column.key as BestMessageKind) as message, index (message.messageId)}
+							{#each column.messages as message, index (message.messageId)}
 								{@const messageKey = `${column.key}-${message.messageId}`}
 								{@const isSelected = selectedMessageKey === messageKey}
 								<BestMessageCard

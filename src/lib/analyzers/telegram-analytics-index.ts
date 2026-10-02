@@ -195,7 +195,7 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 	});
 
 	for (const message of messages) {
-		if (message.replyToMessageId === null) {
+		if (message.classification === 'ignore' || message.replyToMessageId === null) {
 			continue;
 		}
 

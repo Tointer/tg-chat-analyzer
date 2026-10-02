@@ -20,6 +20,10 @@ export type AppTheme = {
 		gifBarHover: string;
 		stickerBar: string;
 		stickerBarHover: string;
+		audioBar: string;
+		audioBarHover: string;
+		documentBar: string;
+		documentBarHover: string;
 		legendText: string;
 		axisText: string;
 		grid: string;
@@ -49,6 +53,10 @@ export const appThemes = {
 			gifBarHover: '#14b8a6',
 			stickerBar: '#db2777',
 			stickerBarHover: '#ec4899',
+			audioBar: '#0284c7',
+			audioBarHover: '#38bdf8',
+			documentBar: '#78716c',
+			documentBarHover: '#a8a29e',
 			legendText: '#f6ede2',
 			axisText: '#cbb8a5',
 			grid: 'rgba(203, 184, 165, 0.12)',
@@ -76,6 +84,10 @@ export const appThemes = {
 			gifBarHover: '#14b8a6',
 			stickerBar: '#ec4899',
 			stickerBarHover: '#f472b6',
+			audioBar: '#0369a1',
+			audioBarHover: '#0284c7',
+			documentBar: '#57534e',
+			documentBarHover: '#78716c',
 			legendText: '#27272a',
 			axisText: '#3f3f46',
 			grid: 'rgba(15, 23, 42, 0.08)',

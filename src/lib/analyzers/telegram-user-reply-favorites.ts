@@ -1,4 +1,4 @@
-import type { AnalyticsIndex, NormalizedTelegramMessage } from './telegram-analytics-index';
+import type { AnalyticsIndex } from './telegram-analytics-index';
 import { getMembershipIntervalsForUser, type MembershipInterval } from './telegram-membership-index';
 import { getTelegramUserStatsById } from './telegram-user-stats';
 

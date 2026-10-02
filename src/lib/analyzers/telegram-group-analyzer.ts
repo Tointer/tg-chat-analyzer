@@ -1,57 +1,32 @@
 import type { AnalyticsIndex } from './telegram-analytics-index';
-import {
-	addResolvedParticipant,
-	aggregateActiveParticipantCounts,
-	removeResolvedParticipantsByName
-} from './telegram-user-analyzer';
+import { formatDayLabel } from './telegram-analysis-shared';
+import { aggregateActiveParticipantCounts } from './telegram-user-analyzer';
 
 export function aggregateParticipantTimeline(index: AnalyticsIndex) {
-	const timeline = new Map<string, number>();
-	const chronologicalMessages = index.messages;
-	const presentParticipants = new Map<string, { id: string; name?: string }>();
-	const nameToUserIds = new Map<string, Set<string>>();
+	const events = [...index.membershipIntervalsByUserId.values()].flatMap((intervals) =>
+		intervals.flatMap((interval) => [
+			{ timestamp: interval.startTimestamp, delta: 1 },
+			...(interval.endTimestamp === null ? [] : [{ timestamp: interval.endTimestamp, delta: -1 }])
+		])
+	).sort((left, right) => left.timestamp - right.timestamp);
+	const timeline = new Map(index.messages.map((message) => [message.dayLabel, 0]));
+	let count = 0;
 	let peakCount = 0;
-
-	for (const entry of chronologicalMessages) {
-		if (entry.messageType === 'message') {
-			addResolvedParticipant(
-				presentParticipants,
-				nameToUserIds,
-				entry.senderId ?? undefined,
-				entry.senderName ?? undefined
-			);
-		}
-
-		if (entry.messageType === 'service') {
-			addResolvedParticipant(
-				presentParticipants,
-				nameToUserIds,
-				entry.actorId ?? undefined,
-				entry.actorName ?? undefined
-			);
-
-			if (entry.original.action === 'remove_members') {
-				for (const memberName of entry.members) {
-					removeResolvedParticipantsByName(presentParticipants, nameToUserIds, memberName);
-				}
+	let eventIndex = 0;
+	for (const label of timeline.keys()) {
+		while (eventIndex < events.length && formatDayLabel(events[eventIndex].timestamp) <= label) {
+			const timestamp = events[eventIndex].timestamp;
+			// Apply simultaneous joins/leaves together to avoid a transient false peak.
+			while (eventIndex < events.length && events[eventIndex].timestamp === timestamp) {
+				count += events[eventIndex++].delta;
 			}
+			peakCount = Math.max(peakCount, count);
 		}
-
-		const participantCount = presentParticipants.size;
-		peakCount = Math.max(peakCount, participantCount);
-		timeline.set(entry.dayLabel, participantCount);
+		timeline.set(label, count);
 	}
-
 	const labels = [...timeline.keys()];
 	const values = [...timeline.values()];
-	const activeParticipantTimeline = aggregateActiveParticipantCounts(labels, chronologicalMessages);
-
-	return {
-		labels,
-		values,
-		activeValues: activeParticipantTimeline.activeValues,
-		currentCount: values.at(-1) ?? 0,
-		currentActiveCount: activeParticipantTimeline.currentActiveCount,
-		peakCount
-	};
+	const active = aggregateActiveParticipantCounts(labels, index.messages);
+	return { labels, values, activeValues: active.activeValues,
+		currentCount: values.at(-1) ?? 0, currentActiveCount: active.currentActiveCount, peakCount };
 }

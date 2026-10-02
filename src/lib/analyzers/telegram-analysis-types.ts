@@ -56,7 +56,7 @@ export type TimeBucketSpec = {
 	size?: number;
 };
 
-export type MediaMessageGroup = 'image' | 'video' | 'gif' | 'sticker';
+export type MediaMessageGroup = 'image' | 'video' | 'gif' | 'sticker' | 'audio' | 'document';
 
 export type ChartSeriesColorKey = 'reply' | 'nonReply' | MediaMessageGroup;
 

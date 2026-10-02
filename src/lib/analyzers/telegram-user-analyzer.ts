@@ -61,6 +61,7 @@ export function aggregateActiveParticipantCounts(
 	const perUserCounts = new Map<string, number>();
 	const activeValues: number[] = [];
 	let nextEventIndex = 0;
+	let windowHead = 0;
 
 	for (const dayLabel of labels) {
 		const dayEndTimestamp = getDayEndTimestamp(dayLabel);
@@ -76,8 +77,8 @@ export function aggregateActiveParticipantCounts(
 			nextEventIndex += 1;
 		}
 
-		while (rollingWindow.length > 0 && rollingWindow[0].timestamp < windowStartTimestamp) {
-			const expiredEvent = rollingWindow.shift();
+		while (windowHead < rollingWindow.length && rollingWindow[windowHead].timestamp < windowStartTimestamp) {
+			const expiredEvent = rollingWindow[windowHead++];
 
 			if (!expiredEvent) {
 				break;
@@ -90,6 +91,12 @@ export function aggregateActiveParticipantCounts(
 			} else {
 				perUserCounts.set(expiredEvent.userId, nextCount);
 			}
+		}
+
+		// Occasionally compact the queue without shifting it for every expired message.
+		if (windowHead > 4096 && windowHead * 2 > rollingWindow.length) {
+			rollingWindow.splice(0, windowHead);
+			windowHead = 0;
 		}
 
 		let activeCount = 0;

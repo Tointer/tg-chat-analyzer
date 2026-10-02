@@ -39,7 +39,7 @@
 </script>
 
 <div class={containerClass} aria-label={ariaLabel}>
-	{#each options as option}
+	{#each options as option (option.value)}
 		<button
 			aria-pressed={selectedValue === option.value}
 			class={`${buttonBaseClass} ${selectedValue === option.value ? isTabsVariant ? 'border-app-tab-active-border bg-app-tab-active text-app-tab-active-text shadow-app-card' : 'bg-app-accent-strong text-app-accent-contrast shadow-app-button' : isTabsVariant ? 'text-app-muted hover:bg-app-surface-alt hover:text-app-text' : 'text-app-muted hover:text-app-text'}`}

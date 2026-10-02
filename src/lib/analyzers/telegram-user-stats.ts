@@ -39,7 +39,9 @@ function createMediaGroupCounts() {
 		image: 0,
 		video: 0,
 		gif: 0,
-		sticker: 0
+		sticker: 0,
+		audio: 0,
+		document: 0
 	} satisfies Record<MediaMessageGroup, number>;
 }
 
@@ -78,8 +80,11 @@ export function getTelegramUserStats(index: AnalyticsIndex): TelegramUserStats[]
 			const dayLabels = new Set<string>();
 			let resolvedUserName = userId;
 			let totalTextLength = 0;
+			let repliesSent = 0;
 
 			for (const message of messages) {
+				if (message.classification === 'ignore') continue;
+				if (message.replyToMessageId !== null) repliesSent += 1;
 				classificationCounts[message.classification] += 1;
 				if (message.mediaGroup) {
 					mediaGroupCounts[message.mediaGroup] += 1;
@@ -101,7 +106,7 @@ export function getTelegramUserStats(index: AnalyticsIndex): TelegramUserStats[]
 				mediaGroupCounts.image +
 				mediaGroupCounts.video +
 				mediaGroupCounts.gif +
-				mediaGroupCounts.sticker;
+				mediaGroupCounts.sticker + mediaGroupCounts.audio + mediaGroupCounts.document;
 
 			return {
 				userId,
@@ -120,7 +125,7 @@ export function getTelegramUserStats(index: AnalyticsIndex): TelegramUserStats[]
 				lastMessageTimestamp: messages.at(-1)?.timestamp ?? null,
 				totalTextLength,
 				averageTextLength: totalMessages > 0 ? totalTextLength / totalMessages : 0,
-				repliesSent: replyStats?.count ?? 0,
+				repliesSent,
 				repliesReceived: repliesReceivedCounts.get(userId) ?? 0,
 				averageReplyLatencyMs:
 					replyStats && replyStats.latencyCount > 0

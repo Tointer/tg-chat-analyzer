@@ -198,7 +198,9 @@ describe('getTelegramUserMessageBuckets', () => {
 				{ label: 'Images', values: [1, 0, 0, 0] },
 				{ label: 'Videos', values: [0, 1, 0, 0] },
 				{ label: 'GIFs', values: [0, 0, 1, 0] },
-				{ label: 'Stickers', values: [0, 0, 1, 0] }
+				{ label: 'Stickers', values: [0, 0, 1, 0] },
+				{ label: 'Audio', values: [0, 0, 0, 0] },
+				{ label: 'Documents', values: [0, 0, 0, 0] }
 			]
 		);
 	});

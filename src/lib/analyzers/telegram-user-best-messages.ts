@@ -51,6 +51,8 @@ function buildMessagePreview(message: NormalizedTelegramMessage) {
 			: 'Sticker';
 	}
 
+	if (message.mediaGroup === 'audio') return 'Audio';
+	if (message.mediaGroup === 'document') return 'Document';
 	if (message.forwardedFrom) {
 		return `Forwarded from ${message.forwardedFrom}`;
 	}

@@ -26,7 +26,6 @@
 - Keep the theme toggle behavior driven by the shared theme store (`activeThemeName`, `cycleTheme`, `initializeThemeStore`).
 
 ## Data And Chart Behavior
-- Message charts intentionally drop the first and last aggregated buckets as incomplete edge periods. Preserve that behavior unless the task explicitly changes analytics semantics.
 - The page supports `day` and `week` views through the `period` query parameter. Default remains `week` unless explicitly changed.
 
 ## Editing Guidelines

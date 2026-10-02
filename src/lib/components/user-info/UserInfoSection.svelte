@@ -110,7 +110,7 @@
 			{:else if isAverageView}
 				Select a participant to inspect their average message rhythm across 24 hours or 7 weekdays.
 			{:else if selectedMetric === 'media'}
-				Select a participant to inspect how many images, videos, GIFs, and stickers they send by day or week.
+				Select a participant to inspect how many images, videos, GIFs, stickers, audio, and documents they send by day or week.
 			{:else}
 				Select a participant to inspect their message or character volume by day or week.
 			{/if}

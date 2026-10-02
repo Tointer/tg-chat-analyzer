@@ -98,6 +98,10 @@
 					backgroundColor: theme.chart.stickerBar,
 					hoverBackgroundColor: theme.chart.stickerBarHover
 				};
+			case 'audio':
+				return { backgroundColor: theme.chart.audioBar, hoverBackgroundColor: theme.chart.audioBarHover };
+			case 'document':
+				return { backgroundColor: theme.chart.documentBar, hoverBackgroundColor: theme.chart.documentBarHover };
 			default:
 				return {
 					backgroundColor: theme.chart.nonReplyBar,

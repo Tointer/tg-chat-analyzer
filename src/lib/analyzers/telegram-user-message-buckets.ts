@@ -30,7 +30,9 @@ const MEDIA_GROUPS: Array<{ key: MediaMessageGroup; label: string }> = [
 	{ key: 'image', label: 'Images' },
 	{ key: 'video', label: 'Videos' },
 	{ key: 'gif', label: 'GIFs' },
-	{ key: 'sticker', label: 'Stickers' }
+	{ key: 'sticker', label: 'Stickers' },
+	{ key: 'audio', label: 'Audio' },
+	{ key: 'document', label: 'Documents' }
 ];
 
 function createBucketCacheKey(
@@ -69,7 +71,9 @@ function createEmptyMediaGroupCounts(): Record<MediaMessageGroup, number> {
 		image: 0,
 		video: 0,
 		gif: 0,
-		sticker: 0
+		sticker: 0,
+		audio: 0,
+		document: 0
 	};
 }
 

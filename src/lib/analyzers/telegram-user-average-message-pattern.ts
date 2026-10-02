@@ -44,7 +44,9 @@ function buildHourlyDenominators(index: AnalyticsIndex, userId: string) {
 	const seenActiveHours = new Set<string>();
 
 	for (const interval of getMembershipIntervalsForUser(index, userId)) {
-		const intervalEnd = interval.endTimestamp ?? index.stats.dateRange.end;
+		// Membership ends are exclusive; the export's last timestamp is inclusive.
+		const intervalEnd = interval.endTimestamp ??
+			(index.stats.dateRange.end === null ? null : index.stats.dateRange.end + 1);
 
 		if (intervalEnd === null) {
 			continue;
@@ -87,7 +89,9 @@ function buildWeekdayDenominators(index: AnalyticsIndex, userId: string) {
 	const seenActiveDays = new Set<number>();
 
 	for (const interval of getMembershipIntervalsForUser(index, userId)) {
-		const intervalEnd = interval.endTimestamp ?? index.stats.dateRange.end;
+		// Membership ends are exclusive; the export's last timestamp is inclusive.
+		const intervalEnd = interval.endTimestamp ??
+			(index.stats.dateRange.end === null ? null : index.stats.dateRange.end + 1);
 
 		if (intervalEnd === null) {
 			continue;

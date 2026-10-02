@@ -11,90 +11,17 @@
 		UserInfoSection,
 		themeOrder
 	} from '$lib';
-	import type {
-		AverageMessagePatternChart,
-		MessageBucketsChart,
-		TelegramAnalysisReport
-	} from '$lib/analyzers/telegram-analysis';
-
-	type PeriodKey = 'day' | 'week';
-	type UserMetricKey = 'messages' | 'characters' | 'media';
-	type UserInfoViewKey = UserMetricKey | 'average' | 'favorites';
-
-	type PageData = {
-		selectedPeriod: 'day' | 'week';
-		periodReports: Record<PeriodKey, TelegramAnalysisReport>;
-		userInfoCards: Array<{
-			userId: string;
-			userName: string;
-			metrics: Record<
-				UserMetricKey,
-				{
-					label: string;
-					totalValue: number;
-					messageBucketsByPeriod: Record<PeriodKey, MessageBucketsChart>;
-				}
-			>;
-			averageMessages: {
-				label: string;
-				leaderboardValue: number;
-				leaderboardValueLabel: string;
-				chartsByPeriod: Record<PeriodKey, AverageMessagePatternChart>;
-			};
-			favorites: {
-				label: string;
-				leaderboardValue: number;
-				leaderboardValueLabel: string;
-				entries: Array<{
-					targetUserId: string;
-					targetUserName: string;
-					observedReplies: number;
-					expectedReplies: number;
-					residual: number;
-					favoriteScore: number;
-					overlapMessageCount: number;
-					overlapTargetMessageCount: number;
-					overlapReplyCount: number;
-				}>;
-			};
-			bestMessages: {
-				mostReactions: Array<{
-					messageId: number;
-					authorName: string;
-					forwardedFrom: string | null;
-					timestamp: number;
-					preview: string;
-					reactionCount: number;
-					replyCount: number;
-					replies: Array<{
-						messageId: number;
-						authorName: string;
-						preview: string;
-					}>;
-				}>;
-				mostReplies: Array<{
-					messageId: number;
-					authorName: string;
-					forwardedFrom: string | null;
-					timestamp: number;
-					preview: string;
-					reactionCount: number;
-					replyCount: number;
-					replies: Array<{
-						messageId: number;
-						authorName: string;
-						preview: string;
-					}>;
-				}>;
-			};
-		}>;
-	};
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+	import type { PageData } from './$types';
+	import type { PeriodKey, ViewKey } from '$lib/components/user-info/UserInfoSection.types';
 
 	let { data }: { data: PageData } = $props();
-	let selectedPeriod = $state<PeriodKey>('week');
+	const selectedPeriod = $derived<PeriodKey>(page.url.searchParams.get('period') === 'day' ? 'day' : 'week');
 	let selectedUserId = $state<string | null>(null);
 	let selectedUserPeriod = $state<PeriodKey>('week');
-	let selectedUserMetric = $state<UserInfoViewKey>('messages');
+	let selectedUserMetric = $state<ViewKey>('messages');
 
 	const currentReport = $derived(data.periodReports[selectedPeriod]);
 	const themeName = fromStore(activeThemeName);
@@ -103,8 +30,10 @@
 		getTheme(themeOrder[(themeOrder.indexOf(themeName.current) + 1) % themeOrder.length] ?? themeOrder[0])
 	);
 
-	function selectPeriod(period: PeriodKey) {
-		selectedPeriod = period;
+	async function selectPeriod(period: PeriodKey) {
+		const url = new URL(page.url);
+		url.searchParams.set('period', period);
+		await goto(resolve(`/?${url.searchParams.toString()}${url.hash}`), { noScroll: true, keepFocus: true });
 	}
 
 	function selectUser(userId: string) {
@@ -115,15 +44,14 @@
 		selectedUserPeriod = period;
 	}
 
-	function selectUserMetric(metric: UserInfoViewKey) {
+	function selectUserMetric(metric: ViewKey) {
 		selectedUserMetric = metric;
 	}
 
 	$effect(() => {
-		selectedPeriod = data.selectedPeriod;
-		selectedUserId = data.userInfoCards[0]?.userId ?? null;
-		selectedUserPeriod = 'week';
-		selectedUserMetric = 'messages';
+		if (!data.userInfoCards.some((user) => user.userId === selectedUserId)) {
+			selectedUserId = data.userInfoCards[0]?.userId ?? null;
+		}
 	});
 </script>
 

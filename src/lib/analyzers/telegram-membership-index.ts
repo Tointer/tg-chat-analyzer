@@ -13,7 +13,6 @@ type PendingJoin = {
 	startReason: MembershipInterval['startReason'];
 };
 
-const ACTOR_JOIN_ACTIONS = new Set(['create_group', 'create_supergroup', 'join_group_by_link']);
 const MEMBER_JOIN_ACTIONS = new Set(['create_group', 'create_supergroup', 'invite_members']);
 
 function rememberKnownUserId(
@@ -95,6 +94,7 @@ function activateKnownUsersByName(
 		return;
 	}
 
+	if (knownUserIds.size !== 1) return;
 	for (const userId of knownUserIds) {
 		activateMembership(intervalsByUserId, activeIntervalsByUserId, userId, timestamp, startReason);
 	}
@@ -132,6 +132,7 @@ function deactivateKnownUsersByName(
 ) {
 	const knownUserIds = nameToUserIds.get(name);
 
+	if (knownUserIds && knownUserIds.size !== 1) return;
 	for (const userId of knownUserIds ?? []) {
 		deactivateMembership(activeIntervalsByUserId, userId, timestamp);
 	}
@@ -146,6 +147,12 @@ export function buildMembershipIntervals(
 	const activeIntervalsByUserId = new Map<string, MembershipInterval>();
 	const nameToUserIds = new Map<string, Set<string>>();
 	const pendingJoinsByName = new Map<string, PendingJoin>();
+
+	// Resolve invitations even when a member first speaks after the service event.
+	for (const message of messages) {
+		rememberKnownUserId(nameToUserIds, message.senderId, message.senderName);
+		rememberKnownUserId(nameToUserIds, message.actorId, message.actorName);
+	}
 
 	for (const message of messages) {
 		rememberKnownUserId(nameToUserIds, message.senderId, message.senderName);
@@ -171,7 +178,7 @@ export function buildMembershipIntervals(
 
 		const action = message.original.action;
 
-		if (ACTOR_JOIN_ACTIONS.has(action ?? '') && isUserId(message.actorId ?? undefined)) {
+		if (isUserId(message.actorId ?? undefined)) {
 			activateKnownUser(
 				intervalsByUserId,
 				activeIntervalsByUserId,

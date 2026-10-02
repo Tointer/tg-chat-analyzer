@@ -78,22 +78,7 @@ function isEmojiOnlyMessage(message: TelegramExportMessage, textContent: string)
 }
 
 function isSupportedMediaOnlyMessage(message: TelegramExportMessage): boolean {
-	if (message.photo || message.sticker_emoji) {
-		return true;
-	}
-
-	const mediaType = message.media_type?.toLowerCase();
-	const mimeType = message.mime_type?.toLowerCase();
-
-	if (mediaType && ['animation', 'photo', 'sticker', 'video'].includes(mediaType)) {
-		return true;
-	}
-
-	if (mimeType?.startsWith('image/') || mimeType?.startsWith('video/')) {
-		return true;
-	}
-
-	return false;
+	return classifyTelegramMediaGroup(message) !== null;
 }
 
 function isStickerOnlyMessage(message: TelegramExportMessage): boolean {
@@ -124,7 +109,8 @@ function isVideoMessage(message: TelegramExportMessage): boolean {
 		return false;
 	}
 
-	return mediaType === 'video' || mimeType?.startsWith('video/') === true;
+	return ['video', 'video_file', 'video_message'].includes(mediaType ?? '') ||
+		mimeType?.startsWith('video/') === true;
 }
 
 function isImageMessage(message: TelegramExportMessage): boolean {
@@ -201,6 +187,15 @@ export function classifyTelegramMediaGroup(message: TelegramExportMessage): Medi
 		return 'image';
 	}
 
+	if (
+		['voice_message', 'audio_file'].includes(message.media_type?.toLowerCase() ?? '') ||
+		message.mime_type?.toLowerCase().startsWith('audio/')
+	) {
+		return 'audio';
+	}
+	if (message.file || message.media_type?.toLowerCase() === 'document') {
+		return 'document';
+	}
 	return null;
 }
 
