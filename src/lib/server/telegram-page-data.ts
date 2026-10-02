@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { exportLibrary } from './export-library';
 import { createFileCache } from './file-cache';
 import type { UserInfoCardItem } from '../components/user-info/UserInfoSection.types';
 import { buildTelegramAnalyticsIndex } from '../analyzers/telegram-analytics-index';
@@ -135,13 +135,18 @@ export function prepareTelegramPageData(telegramExport: TelegramExport) {
 	};
 }
 
-export const getTelegramPageData = createFileCache(
-	resolve('src', 'messages', 'result.json'),
-	(raw) => {
-		const parsed: unknown = JSON.parse(raw);
-		if (!parsed || typeof parsed !== 'object' || !('messages' in parsed) || !Array.isArray(parsed.messages)) {
-			throw new Error('Expected a Telegram chat export with a messages array.');
-		}
-		return prepareTelegramPageData(parsed as TelegramExport);
+let activeCache: { path: string; get: ReturnType<typeof createFileCache<ReturnType<typeof prepareTelegramPageData>>> } | undefined;
+
+export async function getTelegramPageData() {
+	const path = await exportLibrary.activePath();
+	if (!activeCache || activeCache.path !== path) {
+		activeCache = { path, get: createFileCache(path, (raw) => {
+			const parsed: unknown = JSON.parse(raw);
+			if (!parsed || typeof parsed !== 'object' || !('messages' in parsed) || !Array.isArray(parsed.messages)) {
+				throw new Error('Expected a Telegram chat export with a messages array.');
+			}
+			return prepareTelegramPageData(parsed as TelegramExport);
+		}) };
 	}
-);
+	return activeCache.get();
+}
