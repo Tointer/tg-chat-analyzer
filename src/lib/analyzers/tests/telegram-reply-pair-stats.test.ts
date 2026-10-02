@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { buildTelegramAnalyticsIndex } from '../telegram-analytics-index';
+import { buildRawAnalyticsIndex } from './raw-analysis-helpers';
 import {
 	getTelegramReplyPairStats,
 	getTelegramReplyPairStatsByUsers
@@ -19,7 +19,7 @@ function createMessage(overrides: Partial<TelegramExportMessage> = {}): Telegram
 
 describe('getTelegramReplyPairStats', () => {
 	test('builds named directional pair stats from reply edges', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Pair stats chat',
 			messages: [
 				createMessage({

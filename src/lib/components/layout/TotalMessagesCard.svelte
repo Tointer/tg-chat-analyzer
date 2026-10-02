@@ -31,7 +31,7 @@
 	}
 
 	const summaryItems = $derived([
-		{ label: 'media sent', value: report.totalMediaMessages, animated: true },
+		{ label: 'messages with media', value: report.totalMediaMessages, animated: true },
 		{ label: 'people chatted', value: report.peopleChatted, animated: true },
 		{ label: 'time elapsed', value: formatDuration(report.messageSpan.durationMs), animated: false },
 		{ label: 'reactions', value: report.totalReactions, animated: true }
@@ -45,6 +45,7 @@
 		</strong>
 		<p class="m-0 text-sm uppercase tracking-widest text-app-accent sm:text-base">Total messages</p>
 	</div>
+	<p class="m-0 text-sm text-app-muted"><AnimatedNumber value={report.rawMessageCount} /> raw messages</p>
 	<div class="mt-3 grid grid-cols-2 gap-3 text-app-muted">
 		{#each summaryItems as item (item.label)}
 			<div class="rounded-2xl  bg-app-surface-alt px-3 py-3 sm:px-4 sm:py-4">

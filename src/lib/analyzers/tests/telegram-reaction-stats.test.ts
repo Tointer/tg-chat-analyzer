@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { buildTelegramAnalyticsIndex } from '../telegram-analytics-index';
+import { buildRawAnalyticsIndex } from './raw-analysis-helpers';
 import { getTelegramReactionStatsSummary } from '../telegram-reaction-stats';
 import type { TelegramExportMessage } from '../telegram-analysis';
 
@@ -16,7 +16,7 @@ function createMessage(overrides: Partial<TelegramExportMessage> = {}): Telegram
 
 describe('getTelegramReactionStatsSummary', () => {
 	test('summarizes total reactions and emoji counts across non-ignored messages', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Reaction chat',
 			messages: [
 				createMessage({

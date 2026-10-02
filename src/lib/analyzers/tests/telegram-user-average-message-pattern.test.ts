@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { buildTelegramAnalyticsIndex } from '../telegram-analytics-index';
+import { buildRawAnalyticsIndex } from './raw-analysis-helpers';
 import { getTelegramUserAverageMessagePattern } from '../telegram-user-average-message-pattern';
 import type { TelegramExportMessage } from '../telegram-analysis';
 
@@ -16,7 +16,7 @@ function createMessage(overrides: Partial<TelegramExportMessage> = {}): Telegram
 
 describe('getTelegramUserAverageMessagePattern', () => {
 	test('averages messages by UTC hour across active days', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Hourly average chat',
 			messages: [
 				createMessage({
@@ -61,7 +61,7 @@ describe('getTelegramUserAverageMessagePattern', () => {
 	});
 
 	test('averages messages by weekday using active membership days as denominators', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Weekday average chat',
 			messages: [
 				{

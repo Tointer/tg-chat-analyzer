@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { buildTelegramAnalyticsIndex } from '../telegram-analytics-index';
+import { buildRawAnalyticsIndex } from './raw-analysis-helpers';
 import {
 	getTelegramUserReplyFavorites,
 	getTelegramUserReplyFavoritesSummary
@@ -19,7 +19,7 @@ function createMessage(overrides: Partial<TelegramExportMessage> = {}): Telegram
 
 describe('getTelegramUserReplyFavorites', () => {
 	test('ranks reply favorites using overlap-aware expected replies', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Reply favorites chat',
 			messages: [
 				createMessage({

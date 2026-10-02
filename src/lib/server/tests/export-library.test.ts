@@ -8,6 +8,27 @@ import { parseTelegramChatExport } from '../../analyzers/telegram-export-merge';
 
 const chat = parseTelegramChatExport('{"id":42,"type":"private_supergroup","name":"Test chat","messages":[]}');
 
+test('counting preferences persist through imports and export switches without changing files', async () => {
+	const directory = await mkdtemp(join(tmpdir(), 'telegram-counting-'));
+	try {
+		const original = JSON.stringify(chat);
+		await writeFile(join(directory, 'result.json'), original);
+		const library = createExportLibrary(directory);
+		assert.equal((await library.list()).messageCounting, 'consecutive');
+		await library.setMessageCounting('raw');
+		const saved = await library.add(chat, 'Other export', 1, false);
+		await library.activate(saved.id);
+		const reopened = createExportLibrary(directory);
+		assert.equal((await reopened.list()).messageCounting, 'raw');
+		assert.equal((await reopened.activeSelection()).entry.id, saved.id);
+		await reopened.activate('original');
+		assert.equal((await reopened.activeSelection()).messageCounting, 'raw');
+		await reopened.setMessageCounting('consecutive');
+		assert.equal((await library.list()).messageCounting, 'consecutive');
+		assert.equal(await readFile(join(directory, 'result.json'), 'utf8'), original);
+	} finally { await rm(directory, { recursive: true, force: true }); }
+});
+
 test('imports and selection persist while the original export stays untouched', async () => {
 	const directory = await mkdtemp(join(tmpdir(), 'telegram-library-'));
 	try {

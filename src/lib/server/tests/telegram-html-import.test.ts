@@ -20,7 +20,7 @@ test('HTML conversion preserves text, IDs, explicit timezone, joined sender, rep
 	assert.equal(html.messages[1].from_id, html.messages[0].from_id);
 	assert.equal(html.messages[1].reply_to_message_id, 1);
 	assert.deepEqual(html.messages[0].reactions?.map((entry) => entry.count), [1, 4]);
-	const report = analyzeTelegramExport(html);
+	const report = analyzeTelegramExport(html, { messageCounting: 'raw' });
 	assert.equal(report.totalMessages, 2);
 	assert.equal(report.totalReactions, 5);
 	assert.equal(report.peopleChatted, 1);

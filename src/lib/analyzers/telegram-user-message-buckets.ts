@@ -104,7 +104,7 @@ function aggregateUserMediaMessagesByTimeBucket(
 		}
 
 		const bucketCounts = counts.get(key) ?? { values: createEmptyMediaGroupCounts() };
-		bucketCounts.values[message.mediaGroup] += 1;
+		for (const group of message.mediaGroups) bucketCounts.values[group] += 1;
 		counts.set(key, bucketCounts);
 	}
 

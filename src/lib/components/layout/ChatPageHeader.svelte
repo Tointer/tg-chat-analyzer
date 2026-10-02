@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { AppThemeName } from '$lib';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 
 	type Props = {
 		chatName: string;
@@ -22,7 +23,7 @@
 			</h1>
 		</div>
 		<div class="ml-auto flex shrink-0 translate-y-3 items-center gap-4">
-		<a href={resolve('/settings')} class="inline-flex h-9 items-center rounded-xl border border-app-border bg-app-surface-alt px-4 text-sm text-app-muted hover:text-app-text">Settings</a>
+		<a href={resolve(`/settings?period=${page.url.searchParams.get('period') === 'day' ? 'day' : 'week'}`)} class="inline-flex h-9 items-center rounded-xl border border-app-border bg-app-surface-alt px-4 text-sm text-app-muted hover:text-app-text">Settings</a>
 		<button
 			type="button"
 			class="relative inline-flex h-9 w-16 shrink-0 items-center rounded-full border border-app-border bg-app-surface-alt p-1 shadow-app-card transition-colors duration-150 hover:bg-app-surface"

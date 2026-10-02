@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { buildTelegramAnalyticsIndex } from '../telegram-analytics-index';
+import { buildRawAnalyticsIndex } from './raw-analysis-helpers';
 import { getTelegramUserStats, getTelegramUserStatsById } from '../telegram-user-stats';
 import type { TelegramExportMessage } from '../telegram-analysis';
 
@@ -16,7 +16,7 @@ function createMessage(overrides: Partial<TelegramExportMessage> = {}): Telegram
 
 describe('getTelegramUserStats', () => {
 	test('aggregates per-user message and reply metrics from the analytics index', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'User stats chat',
 			messages: [
 				createMessage({
@@ -136,7 +136,7 @@ describe('getTelegramUserStats', () => {
 	});
 
 	test('returns a single user entry by id and reuses cached results', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Single user chat',
 			messages: [
 				createMessage({
@@ -159,7 +159,7 @@ describe('getTelegramUserStats', () => {
 	});
 
 	test('accumulates reply counts and latencies across multiple reply targets', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Multi target replies chat',
 			messages: [
 				createMessage({
@@ -225,7 +225,7 @@ describe('getTelegramUserStats', () => {
 	});
 
 	test('excludes forwarded text from character totals', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Forwarded text stats chat',
 			messages: [
 				createMessage({
@@ -258,7 +258,7 @@ describe('getTelegramUserStats', () => {
 	});
 
 	test('counts supported media groups even when messages include captions', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Media stats chat',
 			messages: [
 				createMessage({

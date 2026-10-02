@@ -86,9 +86,7 @@ export function getTelegramUserStats(index: AnalyticsIndex): TelegramUserStats[]
 				if (message.classification === 'ignore') continue;
 				if (message.replyToMessageId !== null) repliesSent += 1;
 				classificationCounts[message.classification] += 1;
-				if (message.mediaGroup) {
-					mediaGroupCounts[message.mediaGroup] += 1;
-				}
+				for (const group of message.mediaGroups) mediaGroupCounts[group] += 1;
 				dayLabels.add(message.dayLabel);
 				totalTextLength += message.textLength;
 
@@ -102,11 +100,7 @@ export function getTelegramUserStats(index: AnalyticsIndex): TelegramUserStats[]
 				classificationCounts.other +
 				classificationCounts['low-info'] +
 				classificationCounts['media-only'];
-			const totalMediaMessages =
-				mediaGroupCounts.image +
-				mediaGroupCounts.video +
-				mediaGroupCounts.gif +
-				mediaGroupCounts.sticker + mediaGroupCounts.audio + mediaGroupCounts.document;
+			const totalMediaMessages = messages.filter((message) => message.classification !== 'ignore' && message.hasMedia).length;
 
 			return {
 				userId,
@@ -122,7 +116,7 @@ export function getTelegramUserStats(index: AnalyticsIndex): TelegramUserStats[]
 				mediaOnlyMessages: classificationCounts['media-only'],
 				activeDayCount: dayLabels.size,
 				firstMessageTimestamp: messages[0]?.timestamp ?? null,
-				lastMessageTimestamp: messages.at(-1)?.timestamp ?? null,
+				lastMessageTimestamp: messages.at(-1)?.endTimestamp ?? null,
 				totalTextLength,
 				averageTextLength: totalMessages > 0 ? totalTextLength / totalMessages : 0,
 				repliesSent,

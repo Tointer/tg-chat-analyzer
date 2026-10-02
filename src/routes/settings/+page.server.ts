@@ -10,6 +10,14 @@ const MAX_FILES = 2000;
 export const load: PageServerLoad = () => exportLibrary.list();
 
 export const actions: Actions = {
+	counting: async ({ request }) => {
+		const form = await request.formData();
+		const mode = form.get('mode');
+		if (mode !== 'raw' && mode !== 'consecutive') return fail(400, { error: 'Choose grouped or raw counting.' });
+		try { await exportLibrary.setMessageCounting(mode); }
+		catch { return fail(500, { error: 'Could not save message counting settings.' }); }
+		redirect(303, `${base}/?period=${form.get('period') === 'day' ? 'day' : 'week'}`);
+	},
 	merge: async ({ request }) => {
 		try {
 			const form = await request.formData();
@@ -39,6 +47,6 @@ export const actions: Actions = {
 		if (typeof id !== 'string') return fail(400, { error: 'Choose an export to analyze.' });
 		try { await exportLibrary.activate(id); }
 		catch { return fail(400, { error: 'This export is unavailable. Choose another export.' }); }
-		redirect(303, `${base}/`);
+		redirect(303, `${base}/?period=${form.get('period') === 'day' ? 'day' : 'week'}`);
 	}
 };

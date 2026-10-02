@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { buildTelegramAnalyticsIndex } from '../telegram-analytics-index';
+import { buildRawAnalyticsIndex } from './raw-analysis-helpers';
 import {
 	getTelegramUserMediaBuckets,
 	getTelegramUserMessageBuckets,
@@ -20,7 +20,7 @@ function createMessage(overrides: Partial<TelegramExportMessage> = {}): Telegram
 
 describe('getTelegramUserMessageBuckets', () => {
 	test('fills leading and trailing buckets for a user when a wider time range is supplied', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'User range chat',
 			messages: [
 				{
@@ -78,7 +78,7 @@ describe('getTelegramUserMessageBuckets', () => {
 	});
 
 	test('supports character-weighted buckets for the same user range', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'User character range chat',
 			messages: [
 				createMessage({
@@ -135,7 +135,7 @@ describe('getTelegramUserMessageBuckets', () => {
 	});
 
 	test('builds grouped media buckets for images, videos, GIFs, and stickers', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'User media range chat',
 			messages: [
 				createMessage({

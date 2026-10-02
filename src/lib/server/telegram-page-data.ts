@@ -12,6 +12,8 @@ import { getTelegramUserMediaBuckets, getTelegramUserMetricBuckets } from '../an
 import { getTelegramUserReplyFavoritesSummary } from '../analyzers/telegram-user-reply-favorites';
 import { getTelegramUserStats } from '../analyzers/telegram-user-stats';
 import type { TimeBucketSpec, TimeRangeSpec } from '../analyzers/telegram-analysis';
+import type { MessageCountingMode } from '../analyzers/telegram-analysis-types';
+import { DEFAULT_MESSAGE_COUNTING } from '../analyzers/telegram-analysis-config';
 
 const MESSAGE_BUCKETS: Record<'day' | 'week', TimeBucketSpec> = {
 	day: {
@@ -24,8 +26,8 @@ const MESSAGE_BUCKETS: Record<'day' | 'week', TimeBucketSpec> = {
 	}
 };
 
-export function prepareTelegramPageData(telegramExport: TelegramExport) {
-	const analyticsIndex = buildTelegramAnalyticsIndex(telegramExport);
+export function prepareTelegramPageData(telegramExport: TelegramExport, messageCounting: MessageCountingMode = DEFAULT_MESSAGE_COUNTING) {
+	const analyticsIndex = buildTelegramAnalyticsIndex(telegramExport, { messageCounting });
 	const fullHistoryRange: TimeRangeSpec = {
 		startTimestamp: analyticsIndex.stats.dateRange.start ?? undefined,
 		endTimestamp: analyticsIndex.stats.dateRange.end ?? undefined
@@ -135,17 +137,19 @@ export function prepareTelegramPageData(telegramExport: TelegramExport) {
 	};
 }
 
-let activeCache: { path: string; get: ReturnType<typeof createFileCache<ReturnType<typeof prepareTelegramPageData>>> } | undefined;
+let activeCache: { path: string; messageCounting: MessageCountingMode; get: ReturnType<typeof createFileCache<ReturnType<typeof prepareTelegramPageData>>> } | undefined;
 
-export async function getTelegramPageData() {
-	const path = await exportLibrary.activePath();
-	if (!activeCache || activeCache.path !== path) {
-		activeCache = { path, get: createFileCache(path, (raw) => {
+export async function getTelegramPageData(override?: MessageCountingMode) {
+	const selection = await exportLibrary.activeSelection();
+	const { path } = selection;
+	const messageCounting = override ?? selection.messageCounting;
+	if (!activeCache || activeCache.path !== path || activeCache.messageCounting !== messageCounting) {
+		activeCache = { path, messageCounting, get: createFileCache(path, (raw) => {
 			const parsed: unknown = JSON.parse(raw);
 			if (!parsed || typeof parsed !== 'object' || !('messages' in parsed) || !Array.isArray(parsed.messages)) {
 				throw new Error('Expected a Telegram chat export with a messages array.');
 			}
-			return prepareTelegramPageData(parsed as TelegramExport);
+			return prepareTelegramPageData(parsed as TelegramExport, messageCounting);
 		}) };
 	}
 	return activeCache.get();

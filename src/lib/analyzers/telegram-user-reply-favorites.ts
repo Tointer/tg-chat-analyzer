@@ -150,8 +150,8 @@ function prepareIndexData(index: AnalyticsIndex): PreparedIndexData {
 			userReplyTimestamps.push(message.timestamp);
 			replyTimestampsByUserId.set(message.senderId, userReplyTimestamps);
 
-			if (message.repliedToUserId) {
-				const pairKey = getPairKey(message.senderId, message.repliedToUserId);
+			for (const recipient of new Set(message.replies.map((reply) => reply.userId).filter((id): id is string => id !== null))) {
+				const pairKey = getPairKey(message.senderId, recipient);
 				const pairReplyTimestamps = replyTimestampsByPairKey.get(pairKey) ?? [];
 				pairReplyTimestamps.push(message.timestamp);
 				replyTimestampsByPairKey.set(pairKey, pairReplyTimestamps);

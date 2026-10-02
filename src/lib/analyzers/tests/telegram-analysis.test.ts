@@ -1,8 +1,9 @@
+import { analyzeRawTelegramExport } from './raw-analysis-helpers';
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { ACTIVE_PARTICIPANT_MESSAGE_THRESHOLD } from '../telegram-analysis-config';
 import {
-	analyzeTelegramExport,
+
 	classifyTelegramMessage,
 	type TelegramExportMessage
 } from '../telegram-analysis';
@@ -93,7 +94,7 @@ describe('classifyTelegramMessage', () => {
 
 describe('analyzeTelegramExport', () => {
 	test('keeps first and last day buckets in the chart series', () => {
-		const report = analyzeTelegramExport({
+		const report = analyzeRawTelegramExport({
 			name: 'Test chat',
 			messages: [
 				createMessage({ date: '2025-12-13T09:00:00', date_unixtime: '1765616400', text: 'edge start' }),
@@ -148,7 +149,7 @@ describe('analyzeTelegramExport', () => {
 	});
 
 	test('keeps edge buckets in multi-day chart series', () => {
-		const report = analyzeTelegramExport(
+		const report = analyzeRawTelegramExport(
 			{
 				name: '3-day bucket chat',
 				messages: [
@@ -182,7 +183,7 @@ describe('analyzeTelegramExport', () => {
 	});
 
 	test('keeps edge buckets in monthly chart series', () => {
-		const report = analyzeTelegramExport(
+		const report = analyzeRawTelegramExport(
 			{
 				name: 'Monthly chat',
 				messages: [
@@ -216,7 +217,7 @@ describe('analyzeTelegramExport', () => {
 	});
 
 	test('aggregates messages by week for the chart when requested', () => {
-		const report = analyzeTelegramExport(
+		const report = analyzeRawTelegramExport(
 			{
 				name: 'Weekly chat',
 				messages: [
@@ -251,7 +252,7 @@ describe('analyzeTelegramExport', () => {
 	});
 
 		test('fills missing day buckets with zero values inside the covered range', () => {
-			const report = analyzeTelegramExport({
+			const report = analyzeRawTelegramExport({
 				name: 'Sparse day chat',
 				messages: [
 					createMessage({ date: '2025-12-14T09:00:00', date_unixtime: '1765702800', text: 'first' }),
@@ -266,7 +267,7 @@ describe('analyzeTelegramExport', () => {
 		});
 
 		test('fills leading and trailing buckets with zero values when an explicit time range is provided', () => {
-			const report = analyzeTelegramExport(
+			const report = analyzeRawTelegramExport(
 				{
 					name: 'Ranged chat',
 					messages: [
@@ -296,7 +297,7 @@ describe('analyzeTelegramExport', () => {
 		});
 
 	test('separates replies and non-replies in chart buckets', () => {
-		const report = analyzeTelegramExport({
+		const report = analyzeRawTelegramExport({
 			name: 'Mixed chart chat',
 			messages: [
 				createMessage({ id: 1, date: '2025-12-13T09:00:00', date_unixtime: '1765616400', text: 'edge start' }),
@@ -338,7 +339,7 @@ describe('analyzeTelegramExport', () => {
 	});
 
 	test('counts people chatted and total reactions in the summary report', () => {
-		const report = analyzeTelegramExport({
+		const report = analyzeRawTelegramExport({
 			name: 'Reaction summary chat',
 			messages: [
 				createMessage({
@@ -373,7 +374,7 @@ describe('analyzeTelegramExport', () => {
 	});
 
 	test('builds participant timeline from membership events', () => {
-		const report = analyzeTelegramExport({
+		const report = analyzeRawTelegramExport({
 			name: 'Test chat',
 			messages: [
 				{
@@ -440,7 +441,7 @@ describe('analyzeTelegramExport', () => {
 				})
 		);
 
-		const report = analyzeTelegramExport({
+		const report = analyzeRawTelegramExport({
 			name: 'Active window chat',
 			messages: [
 				...aliceMessagesWithinWindow,

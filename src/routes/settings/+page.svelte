@@ -3,6 +3,9 @@
 	import { resolve } from '$app/paths';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { PageProps } from './$types';
+	import type { SubmitFunction } from '@sveltejs/kit';
+	import { page } from '$app/state';
+	import { analysisTransition } from '$lib/analysis-transition.svelte';
 
 	let { data, form }: PageProps = $props();
 	let dialog = $state<HTMLDialogElement>();
@@ -17,6 +20,18 @@
 		return [...groups].map(([key, files]) => ({ key, files, label: typeof key === 'string' ? key.replace(/\/$/, '') || 'HTML export pages' : files[0].name }));
 	});
 	let busy = $state(false);
+	let applying = $state(false);
+	const period = $derived(page.url.searchParams.get('period') === 'day' ? 'day' : 'week');
+	function changeAnalysis(label: string): SubmitFunction {
+		return () => {
+			applying = true;
+			analysisTransition.label = label;
+			return async ({ update }) => {
+				try { await update(); }
+				finally { applying = false; analysisTransition.label = null; }
+			};
+		};
+	}
 	const numberFormatter = new Intl.NumberFormat('en-US');
 	const inputClass = 'w-full rounded-xl border border-app-border bg-app-surface-alt px-4 py-3 text-app-text focus:border-app-accent focus:ring-app-accent';
 	const buttonClass = 'inline-flex items-center justify-center rounded-xl border border-app-border px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-app-surface-alt disabled:cursor-wait disabled:opacity-50';
@@ -46,7 +61,7 @@
 </svelte:head>
 
 <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-	<a href={resolve('/')} class="text-sm text-app-muted hover:text-app-accent">← Back to analysis</a>
+	<a href={resolve(`/?period=${period}`)} class="text-sm text-app-muted hover:text-app-accent">← Back to analysis</a>
 	<header class="mt-6 mb-8 flex flex-wrap items-end justify-between gap-4">
 		<div>
 			<p class="text-sm uppercase tracking-widest text-app-accent">Settings</p>
@@ -69,6 +84,18 @@
 		</div>
 	{/if}
 
+	<section class="surface-card mb-6 p-5 sm:p-6" aria-label="Message counting">
+		<h2 class="text-xl font-display">Message counting</h2>
+		<p class="mt-2 text-sm text-app-muted">Grouped counts consecutive messages from the same person as one. Raw counts each message separately. This applies to all stats.</p>
+		<form method="POST" action="?/counting" class="mt-4 flex flex-wrap gap-2" use:enhance={changeAnalysis('Updating message counting…')}>
+			<input type="hidden" name="period" value={period} />
+			{#each [{ mode: 'consecutive', label: 'Grouped' }, { mode: 'raw', label: 'Raw' }] as option (option.mode)}
+				<button type="submit" name="mode" value={option.mode} aria-pressed={data.messageCounting === option.mode} disabled={applying || busy || data.messageCounting === option.mode} class={`${buttonClass} ${data.messageCounting === option.mode ? 'bg-app-accent-strong text-app-accent-contrast disabled:cursor-default disabled:opacity-100' : 'text-app-muted'}`}>{option.label}</button>
+			{/each}
+		</form>
+		<p class="mt-3 text-xs text-app-subtle">Saved for future visits. Export files stay unchanged.</p>
+	</section>
+
 	<section class="surface-card overflow-hidden" aria-label="Saved exports">
 		<div class="border-b border-app-border p-5 sm:p-6">
 			<h2 class="text-xl font-display">Available exports</h2>
@@ -86,9 +113,10 @@
 				<div class="flex flex-wrap gap-2">
 					<a class={buttonClass} href={resolve('/settings/exports/[id]', { id: entry.id })} download>Download JSON</a>
 					{#if entry.id !== data.activeId}
-						<form method="POST" action="?/activate" use:enhance>
+						<form method="POST" action="?/activate" use:enhance={changeAnalysis(`Switching to ${entry.label}…`)}>
 							<input type="hidden" name="id" value={entry.id} />
-							<button class={`${buttonClass} text-app-accent`} type="submit">Analyze this export</button>
+							<input type="hidden" name="period" value={period} />
+							<button class={`${buttonClass} text-app-accent`} type="submit" disabled={applying || busy}>Analyze this export</button>
 						</form>
 					{/if}
 				</div>

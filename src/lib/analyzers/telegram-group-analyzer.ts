@@ -1,5 +1,5 @@
 import type { AnalyticsIndex } from './telegram-analytics-index';
-import { formatDayLabel } from './telegram-analysis-shared';
+import { formatDayLabel, getMessageTimestamp } from './telegram-analysis-shared';
 import { aggregateActiveParticipantCounts } from './telegram-user-analyzer';
 
 export function aggregateParticipantTimeline(index: AnalyticsIndex) {
@@ -9,7 +9,10 @@ export function aggregateParticipantTimeline(index: AnalyticsIndex) {
 			...(interval.endTimestamp === null ? [] : [{ timestamp: interval.endTimestamp, delta: -1 }])
 		])
 	).sort((left, right) => left.timestamp - right.timestamp);
-	const timeline = new Map(index.messages.map((message) => [message.dayLabel, 0]));
+	const labelsWithActivity = index.messages.flatMap((message) => message.sourceMessages.map(
+		(source) => formatDayLabel(getMessageTimestamp(source) ?? message.timestamp)
+	));
+	const timeline = new Map(labelsWithActivity.sort().map((label) => [label, 0]));
 	let count = 0;
 	let peakCount = 0;
 	let eventIndex = 0;

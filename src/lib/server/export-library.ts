@@ -2,6 +2,8 @@ import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { TelegramChatExport } from '../analyzers/telegram-export-merge';
+import type { MessageCountingMode } from '../analyzers/telegram-analysis-types';
+import { DEFAULT_MESSAGE_COUNTING } from '../analyzers/telegram-analysis-config';
 
 export type ExportLibraryEntry = {
 	id: string;
@@ -13,7 +15,7 @@ export type ExportLibraryEntry = {
 	createdAt: string | null;
 	sourceCount: number;
 };
-type Manifest = { activeId: string; entries: ExportLibraryEntry[] };
+type Manifest = { activeId: string; entries: ExportLibraryEntry[]; messageCounting?: MessageCountingMode };
 const ORIGINAL_ID = 'original';
 const isStoredId = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id);
 
@@ -69,7 +71,18 @@ export function createExportLibrary(directory: string) {
 			let original: ExportLibraryEntry[] = [];
 			try { original = [await getEntry(ORIGINAL_ID, manifest)]; }
 			catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-			return { activeId: manifest.activeId, entries: [...original, ...manifest.entries] };
+			return { activeId: manifest.activeId, entries: [...original, ...manifest.entries], messageCounting: manifest.messageCounting ?? DEFAULT_MESSAGE_COUNTING };
+		},
+		async activeSelection() {
+			const manifest = await readManifest();
+			const entry = await getEntry(manifest.activeId, manifest);
+			return { path: pathForId(manifest.activeId), entry, messageCounting: manifest.messageCounting ?? DEFAULT_MESSAGE_COUNTING };
+		},
+		setMessageCounting(messageCounting: MessageCountingMode) {
+			return serialize(async () => {
+				const manifest = await readManifest();
+				await saveManifest({ ...manifest, messageCounting });
+			});
 		},
 		async activePath() {
 			const manifest = await readManifest();
@@ -98,7 +111,7 @@ export function createExportLibrary(directory: string) {
 				const entry: ExportLibraryEntry = { id, label, chatName: data.name, chatId: data.id,
 					messageCount: data.messages.length, bytes: Buffer.byteLength(raw),
 					createdAt: new Date().toISOString(), sourceCount };
-				await saveManifest({ activeId: activate ? id : manifest.activeId, entries: [...manifest.entries, entry] });
+				await saveManifest({ ...manifest, activeId: activate ? id : manifest.activeId, entries: [...manifest.entries, entry] });
 				return entry;
 			});
 		}

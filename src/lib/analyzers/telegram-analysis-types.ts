@@ -107,9 +107,12 @@ export type NormalizedTimeRange = {
 };
 
 export type TelegramAnalysisOptions = {
+	messageCounting?: MessageCountingMode;
 	messageBuckets?: TimeBucketSpec;
 	timeRange?: TimeRangeSpec;
 };
+
+export type MessageCountingMode = 'consecutive' | 'raw';
 
 export type MessageBucketsChart = {
 	bucket: NormalizedTimeBucket;
@@ -135,6 +138,8 @@ export type TelegramAnalysisReport = {
 	};
 	messageBuckets: MessageBucketsChart;
 	totalMessages: number;
+	rawMessageCount: number;
+	messageCounting: MessageCountingMode;
 	totalMediaMessages: number;
 	peopleChatted: number;
 	totalReactions: number;

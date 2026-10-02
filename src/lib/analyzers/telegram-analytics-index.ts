@@ -1,6 +1,8 @@
-import { formatDayLabel, getChronologicalMessages } from './telegram-analysis-shared';
+import { formatDayLabel, getChronologicalMessages, getMessageTimestamp } from './telegram-analysis-shared';
 import { buildMembershipIntervals, type MembershipInterval } from './telegram-membership-index';
 import { classifyTelegramMediaGroup, classifyTelegramMessage } from './telegram-text-analyzer';
+import { groupConsecutiveMessages } from './telegram-message-grouping';
+import { DEFAULT_MESSAGE_COUNTING } from './telegram-analysis-config';
 import type {
 	MediaMessageGroup,
 	MessageBucketAggregate,
@@ -11,9 +13,15 @@ import type {
 	TelegramExport,
 	TelegramExportMessage
 } from './telegram-analysis-types';
+import type { MessageCountingMode } from './telegram-analysis-types';
 
 export type NormalizedTelegramMessage = {
 	original: TelegramExportMessage;
+	sourceMessages: TelegramExportMessage[];
+	rawMessageCount: number;
+	endTimestamp: number;
+	mediaGroups: MediaMessageGroup[];
+	replies: Array<{ messageId: number; targetId: number; userId: string | null; latencyMs: number | null; timestamp: number }>;
 	id: number | null;
 	timestamp: number;
 	dayLabel: string;
@@ -47,6 +55,7 @@ export type ReplyEdgeSummary = {
 };
 
 export type AnalyticsIndex = {
+	messageCounting: MessageCountingMode;
 	chatName: string;
 	messages: NormalizedTelegramMessage[];
 	messageById: Map<number, NormalizedTelegramMessage>;
@@ -57,6 +66,7 @@ export type AnalyticsIndex = {
 	bucketAggregatesByKey: Map<string, MessageBucketAggregate[]>;
 	stats: {
 		totalMessages: number;
+		rawMessageCount: number;
 		totalMediaMessages: number;
 		peopleChatted: number;
 		totalReactions: number;
@@ -126,7 +136,8 @@ export function setBucketAggregateCache(
 	index.bucketAggregatesByKey.set(buildBucketKey(bucket, metric, timeRange), aggregates);
 }
 
-export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): AnalyticsIndex {
+export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport, options: { messageCounting?: MessageCountingMode } = {}): AnalyticsIndex {
+	const messageCounting = options.messageCounting ?? DEFAULT_MESSAGE_COUNTING;
 	const messageById = new Map<number, NormalizedTelegramMessage>();
 	const messagesByUserId = new Map<string, NormalizedTelegramMessage[]>();
 	const messagesByDayLabel = new Map<string, NormalizedTelegramMessage[]>();
@@ -141,12 +152,14 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 	let totalReactions = 0;
 
 	const chronologicalMessages = getChronologicalMessages(telegramExport.messages ?? []);
-	const messages = chronologicalMessages.map(({ message, timestamp }) => {
+	const rawMessages = chronologicalMessages.map(({ message, timestamp }) => {
 		const textContent = extractTextContent(message);
 		const mediaGroup = classifyTelegramMediaGroup(message);
 		const reactionCount = getReactionCount(message);
 		const normalizedMessage: NormalizedTelegramMessage = {
 			original: message,
+			sourceMessages: [message], rawMessageCount: 1, endTimestamp: timestamp,
+			mediaGroups: mediaGroup ? [mediaGroup] : [], replies: [],
 			id: typeof message.id === 'number' ? message.id : null,
 			timestamp,
 			dayLabel: formatDayLabel(timestamp),
@@ -169,6 +182,10 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 			members: [...(message.members ?? [])]
 		};
 
+		return normalizedMessage;
+	});
+	const messages = groupConsecutiveMessages(rawMessages, messageCounting);
+	for (const normalizedMessage of messages) {
 		classificationCounts[normalizedMessage.classification] += 1;
 		if (normalizedMessage.classification !== 'ignore' && normalizedMessage.hasMedia) {
 			totalMediaMessages += 1;
@@ -177,9 +194,7 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 			totalReactions += normalizedMessage.reactionCount;
 		}
 
-		if (normalizedMessage.id !== null) {
-			messageById.set(normalizedMessage.id, normalizedMessage);
-		}
+		for (const source of normalizedMessage.sourceMessages) if (typeof source.id === 'number') messageById.set(source.id, normalizedMessage);
 
 		if (normalizedMessage.senderId) {
 			const userMessages = messagesByUserId.get(normalizedMessage.senderId) ?? [];
@@ -191,67 +206,77 @@ export function buildTelegramAnalyticsIndex(telegramExport: TelegramExport): Ana
 		dayMessages.push(normalizedMessage);
 		messagesByDayLabel.set(normalizedMessage.dayLabel, dayMessages);
 
-		return normalizedMessage;
-	});
+	}
 
 	for (const message of messages) {
-		if (message.classification === 'ignore' || message.replyToMessageId === null) {
+		if (message.classification === 'ignore') {
 			continue;
 		}
-
-		const targetMessage = messageById.get(message.replyToMessageId);
-		if (!targetMessage) {
-			continue;
+		const targets = new Set<number>();
+		const recipients = new Set<string>();
+		for (const source of message.sourceMessages) {
+			if (typeof source.reply_to_message_id !== 'number') continue;
+			const targetMessage = messageById.get(source.reply_to_message_id);
+			if (targetMessage === message && messageCounting === 'consecutive') continue;
+			const targetId = targetMessage?.id ?? source.reply_to_message_id;
+			if (targets.has(targetId)) continue;
+			targets.add(targetId);
+			const sourceTimestamp = getMessageTimestamp(source) ?? message.timestamp;
+			const targetSource = targetMessage?.sourceMessages.find((part) => part.id === source.reply_to_message_id);
+			const targetTimestamp = targetSource ? getMessageTimestamp(targetSource) : undefined;
+			const latencyMs = targetMessage ? Math.max(0, sourceTimestamp - (targetTimestamp ?? targetMessage.timestamp)) : null;
+			message.replies.push({ messageId: source.reply_to_message_id, targetId, userId: targetMessage?.senderId ?? null, latencyMs, timestamp: sourceTimestamp });
 		}
+		message.replyToMessageId = message.replies[0]?.messageId ?? null;
+		message.repliedToUserId = message.replies[0]?.userId ?? null;
+		message.replyLatencyMs = message.replies[0]?.latencyMs ?? null;
+		for (const reply of message.replies) {
+			if (!message.senderId || !reply.userId || recipients.has(reply.userId)) continue;
+			recipients.add(reply.userId);
+			const edgeKey = `${message.senderId}->${reply.userId}`;
+			const edge = replyEdgesByPairKey.get(edgeKey) ?? {
+				fromUserId: message.senderId,
+				toUserId: reply.userId,
+				count: 0,
+				totalReplyLatencyMs: 0,
+				replyLatencyCount: 0,
+				firstReplyTimestamp: message.timestamp,
+				lastReplyTimestamp: message.timestamp
+			};
 
-		message.repliedToUserId = targetMessage.senderId;
-		message.replyLatencyMs = Math.max(0, message.timestamp - targetMessage.timestamp);
+			edge.count += 1;
+			edge.firstReplyTimestamp = Math.min(edge.firstReplyTimestamp, message.timestamp);
+			edge.lastReplyTimestamp = Math.max(edge.lastReplyTimestamp, message.timestamp);
 
-		if (!message.senderId || !targetMessage.senderId) {
-			continue;
+			if (reply.latencyMs !== null) {
+				edge.totalReplyLatencyMs += reply.latencyMs;
+				edge.replyLatencyCount += 1;
+			}
+
+			replyEdgesByPairKey.set(edgeKey, edge);
 		}
-
-		const edgeKey = `${message.senderId}->${targetMessage.senderId}`;
-		const edge = replyEdgesByPairKey.get(edgeKey) ?? {
-			fromUserId: message.senderId,
-			toUserId: targetMessage.senderId,
-			count: 0,
-			totalReplyLatencyMs: 0,
-			replyLatencyCount: 0,
-			firstReplyTimestamp: message.timestamp,
-			lastReplyTimestamp: message.timestamp
-		};
-
-		edge.count += 1;
-		edge.firstReplyTimestamp = Math.min(edge.firstReplyTimestamp, message.timestamp);
-		edge.lastReplyTimestamp = Math.max(edge.lastReplyTimestamp, message.timestamp);
-
-		if (message.replyLatencyMs !== null) {
-			edge.totalReplyLatencyMs += message.replyLatencyMs;
-			edge.replyLatencyCount += 1;
-		}
-
-		replyEdgesByPairKey.set(edgeKey, edge);
 	}
 
 	return {
+		messageCounting,
 		chatName: telegramExport.name ?? 'Telegram Chat',
 		messages,
 		messageById,
 		messagesByUserId,
 		messagesByDayLabel,
-		membershipIntervalsByUserId: buildMembershipIntervals(messages),
+		membershipIntervalsByUserId: buildMembershipIntervals(rawMessages),
 		replyEdges: [...replyEdgesByPairKey.values()],
 		bucketAggregatesByKey: new Map<string, MessageBucketAggregate[]>(),
 		stats: {
 			totalMessages: messages.filter((message) => message.classification !== 'ignore').length,
+			rawMessageCount: rawMessages.filter((message) => message.classification !== 'ignore').length,
 			totalMediaMessages,
 			peopleChatted: messagesByUserId.size,
 			totalReactions,
 			classificationCounts,
 			dateRange: {
 				start: messages[0]?.timestamp ?? null,
-				end: messages.at(-1)?.timestamp ?? null
+				end: rawMessages.at(-1)?.timestamp ?? null
 			}
 		}
 	};

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { buildTelegramAnalyticsIndex } from '../telegram-analytics-index';
+import { buildRawAnalyticsIndex } from './raw-analysis-helpers';
 import {
 	areUsersCoPresentAtTimestamp,
 	getMembershipIntervalsForUser,
@@ -20,7 +20,7 @@ function createMessage(overrides: Partial<TelegramExportMessage> = {}): Telegram
 
 describe('membership interval indexing', () => {
 	test('starts membership from join events or first message and ends it on remove events', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Membership chat',
 			messages: [
 				{
@@ -89,7 +89,7 @@ describe('membership interval indexing', () => {
 	});
 
 	test('backdates membership start to invite events once the invited user sends a first message', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Invite chat',
 			messages: [
 				{
@@ -123,7 +123,7 @@ describe('membership interval indexing', () => {
 	});
 
 	test('checks pairwise co-presence using the indexed intervals', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Co-presence chat',
 			messages: [
 				{

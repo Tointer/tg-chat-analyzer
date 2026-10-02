@@ -5,7 +5,9 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
 	try {
-		return { ...await getTelegramPageData(), selectedPeriod: url.searchParams.get('period') === 'day' ? 'day' : 'week' };
+		const counting = url.searchParams.get('counting');
+		const messageCounting = counting === 'raw' || counting === 'consecutive' ? counting : undefined;
+		return { ...await getTelegramPageData(messageCounting), selectedPeriod: url.searchParams.get('period') === 'day' ? 'day' : 'week' };
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException).code === 'ENOENT') redirect(303, `${base}/settings`);
 		throw error;

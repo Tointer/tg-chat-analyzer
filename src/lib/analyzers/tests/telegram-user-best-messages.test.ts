@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { buildTelegramAnalyticsIndex } from '../telegram-analytics-index';
+import { buildRawAnalyticsIndex } from './raw-analysis-helpers';
 import {
 	getTelegramUserBestMessages,
 	getTelegramUserBestMessagesById
@@ -19,7 +19,7 @@ function createMessage(overrides: Partial<TelegramExportMessage> = {}): Telegram
 
 describe('getTelegramUserBestMessages', () => {
 	test('returns top authored messages by received reactions and replies', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Best messages chat',
 			messages: [
 				...Array.from({ length: 12 }, (_, index) => {
@@ -125,7 +125,7 @@ describe('getTelegramUserBestMessages', () => {
 	});
 
 	test('reuses cached summaries and returns undefined for missing users', () => {
-		const index = buildTelegramAnalyticsIndex({
+		const index = buildRawAnalyticsIndex({
 			name: 'Cached best messages chat',
 			messages: [
 				createMessage({

@@ -15,6 +15,9 @@ Small web app to explore Telegram group chat export data locally
 
 ## Counting and loading
 
+- By default, consecutive messages from the same sender count as one message across all analytics. Another sender or a service event ends the run; there is no time cutoff. Unidentified senders stay separate. Groups use their first message's UTC day/hour, while the full export date range is retained.
+- The **Grouped / Raw** switch in Settings restores the original counting at any time and saves your choice for future visits. A loading indicator stays visible while switching counting modes or exports. The raw count is shown only beneath the top total. The default is centralized in `src/lib/analyzers/telegram-analysis-config.ts`, and the rule lives in `telegram-message-grouping.ts`. Export files remain unchanged.
+- Group text and reactions combine all parts; authored character totals still exclude forwarded text. Replies to any part resolve to the group, repeated replies to that group count once, and replies within the same group are excluded. A group with several media kinds counts once in each kind, so media categories can overlap.
 - Message and media totals include voice messages, audio files, and documents.
 - Charts retain the first and last buckets, including partial periods.
 - Sent replies are counted even when the target message is absent from the export.

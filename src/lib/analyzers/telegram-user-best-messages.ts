@@ -115,18 +115,17 @@ export function getTelegramUserBestMessages(index: AnalyticsIndex): TelegramUser
 			continue;
 		}
 
-		repliesByMessageId.set(
-			message.replyToMessageId,
-			(repliesByMessageId.get(message.replyToMessageId) ?? 0) + 1
-		);
-		const directReplies = directRepliesByMessageId.get(message.replyToMessageId) ?? [];
-		directReplies.push({
-			messageId: message.id ?? -1,
-			authorName: message.senderName ?? message.senderId ?? 'Unknown',
-			preview: buildMessagePreview(message),
-			timestamp: message.timestamp
-		});
-		directRepliesByMessageId.set(message.replyToMessageId, directReplies);
+		for (const reply of message.replies) {
+			repliesByMessageId.set(reply.targetId, (repliesByMessageId.get(reply.targetId) ?? 0) + 1);
+			const directReplies = directRepliesByMessageId.get(reply.targetId) ?? [];
+			directReplies.push({
+				messageId: message.id ?? -1,
+				authorName: message.senderName ?? message.senderId ?? 'Unknown',
+				preview: buildMessagePreview(message),
+				timestamp: message.timestamp
+			});
+			directRepliesByMessageId.set(reply.targetId, directReplies);
+		}
 	}
 
 	for (const directReplies of directRepliesByMessageId.values()) {
@@ -157,7 +156,7 @@ export function getTelegramUserBestMessages(index: AnalyticsIndex): TelegramUser
 							preview: reply.preview
 						}))
 					} satisfies TelegramUserBestMessage;
-				});
+					});
 
 			return {
 				userId,

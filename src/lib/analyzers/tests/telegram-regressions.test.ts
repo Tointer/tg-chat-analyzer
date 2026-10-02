@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { analyzeTelegramAnalyticsIndex, type TelegramExportMessage } from '../telegram-analysis';
-import { buildTelegramAnalyticsIndex } from '../telegram-analytics-index';
+import { buildRawAnalyticsIndex } from './raw-analysis-helpers';
 import { getTelegramUserAverageMessagePattern } from '../telegram-user-average-message-pattern';
 import { getTelegramUserStatsById } from '../telegram-user-stats';
 import { getTelegramUserMediaBuckets } from '../telegram-user-message-buckets';
@@ -12,13 +12,13 @@ function message(id: number, date: string, extra: Partial<TelegramExportMessage>
 }
 
 test('single-message users have nonzero hourly and weekday averages', () => {
-	const index = buildTelegramAnalyticsIndex({ messages: [message(1, '2026-01-05T12:00:00Z')] });
+	const index = buildRawAnalyticsIndex({ messages: [message(1, '2026-01-05T12:00:00Z')] });
 	assert.equal(getTelegramUserAverageMessagePattern(index, 'user1', 'day').values[12], 1);
 	assert.equal(getTelegramUserAverageMessagePattern(index, 'user1', 'week').values[0], 1);
 });
 
 test('last export message at midnight contributes to the final day and hour', () => {
-	const index = buildTelegramAnalyticsIndex({ messages: [
+	const index = buildRawAnalyticsIndex({ messages: [
 		message(1, '2026-01-05T12:00:00Z'), message(2, '2026-01-06T00:00:00Z')
 	] });
 	assert.equal(getTelegramUserAverageMessagePattern(index, 'user1', 'day').values[0], 1);
@@ -26,7 +26,7 @@ test('last export message at midnight contributes to the final day and hour', ()
 });
 
 test('membership removal remains exclusive at midnight', () => {
-	const index = buildTelegramAnalyticsIndex({ messages: [
+	const index = buildRawAnalyticsIndex({ messages: [
 		message(1, '2026-01-05T12:00:00Z'),
 		{ type: 'service', date: '2026-01-06T00:00:00Z', action: 'remove_members', members: ['Alice'] }
 	] });
@@ -35,7 +35,7 @@ test('membership removal remains exclusive at midnight', () => {
 });
 
 test('unresolved replies count as sent without fabricating received replies or latency', () => {
-	const index = buildTelegramAnalyticsIndex({ messages: [message(1, '2026-01-05T12:00:00Z', { reply_to_message_id: 999 })] });
+	const index = buildRawAnalyticsIndex({ messages: [message(1, '2026-01-05T12:00:00Z', { reply_to_message_id: 999 })] });
 	const stats = getTelegramUserStatsById(index, 'user1');
 	assert.equal(stats?.repliesSent, 1);
 	assert.equal(stats?.repliesReceived, 0);
@@ -44,7 +44,7 @@ test('unresolved replies count as sent without fabricating received replies or l
 });
 
 test('ignored messages do not inflate user activity or reply relationships', () => {
-	const index = buildTelegramAnalyticsIndex({ messages: [
+	const index = buildRawAnalyticsIndex({ messages: [
 		message(1, '2026-01-05T12:00:00Z'),
 		message(2, '2026-01-06T12:00:00Z', { text: '', reply_to_message_id: 1 })
 	] });
@@ -56,7 +56,7 @@ test('ignored messages do not inflate user activity or reply relationships', () 
 });
 
 test('audio, documents and video messages agree across totals and media charts', () => {
-	const index = buildTelegramAnalyticsIndex({ messages: [
+	const index = buildRawAnalyticsIndex({ messages: [
 		message(1, '2026-01-05T12:00:00Z', { text: '', media_type: 'voice_message', mime_type: 'audio/ogg', file: 'voice.ogg' }),
 		message(2, '2026-01-05T13:00:00Z', { text: '', media_type: 'audio_file', mime_type: 'audio/mpeg', file: 'song.mp3' }),
 		message(3, '2026-01-05T14:00:00Z', { text: '', mime_type: 'application/pdf', file: 'document.pdf' }),
@@ -73,7 +73,7 @@ test('audio, documents and video messages agree across totals and media charts',
 });
 
 test('participant chart includes invited users before their first message', () => {
-	const index = buildTelegramAnalyticsIndex({ messages: [
+	const index = buildRawAnalyticsIndex({ messages: [
 		{ type: 'service', date: '2026-01-05T10:00:00Z', action: 'invite_members', actor_id: 'user9', actor: 'Admin', members: ['Alice'] },
 		message(1, '2026-01-06T12:00:00Z'),
 		{ type: 'service', date: '2026-01-07T10:00:00Z', action: 'remove_members', actor_id: 'user9', actor: 'Admin', members: ['Alice'] }
@@ -83,7 +83,7 @@ test('participant chart includes invited users before their first message', () =
 });
 
 test('ambiguous display names do not join or remove multiple distinct users', () => {
-	const index = buildTelegramAnalyticsIndex({ messages: [
+	const index = buildRawAnalyticsIndex({ messages: [
 		{ type: 'service', date: '2026-01-05T10:00:00Z', action: 'invite_members', members: ['Alice'] },
 		message(1, '2026-01-06T12:00:00Z'),
 		message(2, '2026-01-06T13:00:00Z', { from_id: 'user2' }),

@@ -29,6 +29,7 @@ export type {
 	MessageBucketsChart,
 	MessageBucketsChartSeries,
 	MessageClassification,
+	MessageCountingMode,
 	TimeRangeSpec,
 	TimeBucketSpec,
 	TelegramAnalysisOptions,
@@ -45,7 +46,7 @@ export function analyzeTelegramExport(
 	telegramExport: TelegramExport,
 	options: TelegramAnalysisOptions = {}
 ): TelegramAnalysisReport {
-	return analyzeTelegramAnalyticsIndex(buildTelegramAnalyticsIndex(telegramExport), options);
+	return analyzeTelegramAnalyticsIndex(buildTelegramAnalyticsIndex(telegramExport, options), options);
 }
 
 export function analyzeTelegramAnalyticsIndex(
@@ -93,6 +94,8 @@ export function analyzeTelegramAnalyticsIndex(
 		participantTimeline,
 		messageBuckets,
 		totalMessages,
+		rawMessageCount: index.stats.rawMessageCount,
+		messageCounting: index.messageCounting,
 		totalMediaMessages: index.stats.totalMediaMessages,
 		peopleChatted: index.stats.peopleChatted,
 		totalReactions: reactionSummary.totalReactions,
